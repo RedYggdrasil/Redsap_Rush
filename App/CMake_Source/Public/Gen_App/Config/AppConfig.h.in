@@ -1,0 +1,51 @@
+#pragma once
+#define ${APP_NAME}_VERSION_MAJOR @RedSap_Rush_VERSION_MAJOR@
+#define ${APP_NAME}_VERSION_MINOR @RedSap_Rush_VERSION_MINOR@
+
+
+#define NOMINMAX
+
+#define WidenHelper(x)  L##x
+#define Widen(x)        WidenHelper(x)
+
+#define ${APP_NAME}_PROJECT_ASSET_PATH "@CMAKE_CURRENT_SOURCE_DIR@/Assets/"
+#define ${APP_NAME}_LOCAL_ASSET_PATH "Assets"
+
+#define ${APP_NAME}_LOCAL_SHADER_PATH ""
+
+#define DEBUG_PHYSIC 1
+#if DEBUG_PHYSIC 
+	#define DEBUG_PHYSIC_AABB				0
+	#define DEBUG_PHYSIC_WORLD_STATIC 		1
+	#define DEBUG_PHYSIC_WORLD_DYNAMIC 		1
+	#define DEBUG_PHYSIC_PAWN 				1
+	#define DEBUG_PHYSIC_HAZARD 			1
+	#define DEBUG_PHYSIC_PAWN_PATH 			1
+	#define DEBUG_PHYSIC_HAZARD_PLACEMENT 	1
+#endif
+
+#define USE_VSYNC_DEFAULT_VALUE false
+
+#define USE_THREADED_RENDERING true
+
+#define START_SCENE EStartScene::PhysicDemo1
+
+// Values : 
+// EMainInputDevice::MouseKeyboard
+// EMainInputDevice::GamePad
+#define USE_START_INPUT EMainInputDevice::MouseKeyboard
+
+#define USE_${APP_NAME}_PROJECT_ASSETS false
+
+constexpr bool B_${APP_NAME}_USING_PROJECT_ASSET = USE_${APP_NAME}_PROJECT_ASSETS;
+
+#if USE_${APP_NAME}_PROJECT_ASSETS
+#define ${APP_NAME}_ASSET_PATH(x) ${APP_NAME}_PROJECT_ASSET_PATH##x
+constexpr char ${APP_NAME}_ASSET_PATH[] = ${APP_NAME}_PROJECT_ASSET_PATH;
+constexpr wchar_t ${APP_NAME}_ASSET_PATH_W[] = Widen(App_PROJECT_ASSET_PATH);
+
+#else
+#define ${APP_NAME}_ASSET_PATH(x) ${APP_NAME}_LOCAL_ASSET_PATH##x
+constexpr char ${APP_NAME}_ASSET_PATH[] = ${APP_NAME}_LOCAL_ASSET_PATH;
+constexpr wchar_t APP_ASSET_PATH_W[] = Widen(${APP_NAME}_LOCAL_ASSET_PATH);
+#endif
