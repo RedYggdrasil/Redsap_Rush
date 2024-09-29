@@ -35,7 +35,7 @@
 // EMainInputDevice::GamePad
 #define USE_START_INPUT EMainInputDevice::MouseKeyboard
 
-#define USE_${APP_NAME}_PROJECT_ASSETS false
+#define USE_${APP_NAME}_PROJECT_ASSETS true
 
 constexpr bool B_${APP_NAME}_USING_PROJECT_ASSET = USE_${APP_NAME}_PROJECT_ASSETS;
 
