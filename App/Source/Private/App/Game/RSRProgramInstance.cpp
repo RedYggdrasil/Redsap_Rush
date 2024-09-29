@@ -324,7 +324,9 @@ void RSRProgramInstance::InitializeProgram()
 	}
 	_R_FAILED(DXContext::Get().GetDevice()->CreateGraphicsPipelineState(&DXPipeline::Get().GetStateDesc2D(), IID_PPV_ARGS(&m_pso2D)));
 	_R_FAILED(DXContext::Get().GetDevice()->CreateGraphicsPipelineState(&DXPipeline::Get().GetStateDesc3D(), IID_PPV_ARGS(&m_pso3D)));
+#if DEBUG_PHYSIC
 	_R_FAILED(DXContext::Get().GetDevice()->CreateGraphicsPipelineState(&DXPipeline::Get().GetStateDescDebugPhysic(), IID_PPV_ARGS(&m_psoDebugPhysic)));
+#endif
 
 	_R_FALSE(DXWindow::Get().Init());
 	_R_FALSE(RSRBasicShapes::Get().Init(pAssetManager));
