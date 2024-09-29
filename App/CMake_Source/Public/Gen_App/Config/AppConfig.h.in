@@ -13,7 +13,7 @@
 
 #define ${APP_NAME}_LOCAL_SHADER_PATH ""
 
-#define DEBUG_PHYSIC 1
+#define DEBUG_PHYSIC 0
 #if DEBUG_PHYSIC 
 	#define DEBUG_PHYSIC_AABB				0
 	#define DEBUG_PHYSIC_WORLD_STATIC 		1
@@ -35,7 +35,7 @@
 // EMainInputDevice::GamePad
 #define USE_START_INPUT EMainInputDevice::MouseKeyboard
 
-#define USE_${APP_NAME}_PROJECT_ASSETS false
+#define USE_${APP_NAME}_PROJECT_ASSETS true
 
 constexpr bool B_${APP_NAME}_USING_PROJECT_ASSET = USE_${APP_NAME}_PROJECT_ASSETS;
 
