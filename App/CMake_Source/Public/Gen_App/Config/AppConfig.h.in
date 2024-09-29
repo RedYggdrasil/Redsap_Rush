@@ -28,7 +28,7 @@
 
 #define USE_THREADED_RENDERING true
 
-#define START_SCENE EStartScene::PhysicDemo1
+#define START_SCENE EStartScene::TheTrench
 
 // Values : 
 // EMainInputDevice::MouseKeyboard
