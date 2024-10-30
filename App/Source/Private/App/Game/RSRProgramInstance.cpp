@@ -102,8 +102,8 @@ void RSRProgramInstance::Run(int argc, char** argv)
 
 	//DXWindow::Get().SetFullscreen(true);
 	{
-		bool bIsTheTrench = false;
-		std::shared_ptr<RSRScene> scene = CreateScene(bIsTheTrench ? EStartScene::TheTrench : EStartScene::PhysicDemo1/*START_SCENE*/);
+		//bool bIsTheTrench = true;
+		std::shared_ptr<RSRScene> scene = CreateScene(START_SCENE);
 		scene->Load();
 		SetCurrentScene(scene);
 		scene.reset();
