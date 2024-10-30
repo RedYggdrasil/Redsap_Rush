@@ -19,6 +19,8 @@ namespace RSRush
 		};
 		PD1SlideTimelineData m_slideTimelineData;
 		//std::shared_ptr<RSRush::RSRTT404Pawn> m_playerPawn;
+		std::weak_ptr<class RSRODrawableLightSource> m_drawableLightSource;
+
 
 #pragma region Textures
 		std::vector<RSRSharedTexture2DPtr> m_2dTextures;

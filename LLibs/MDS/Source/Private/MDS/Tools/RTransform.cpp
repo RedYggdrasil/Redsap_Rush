@@ -63,6 +63,32 @@ void RTransformMatrix::SetTransform(const RTransform& InTransform)
     XMStoreFloat4x4(&this->m_model, m_transform.ComputeTRSMatrix());
 }
 
+DirectX::XMFLOAT4X4 RTransformMatrix::ComputeInverseTranspose() const
+{
+
+    DirectX::XMMATRIX TransformMatrix = DirectX::XMLoadFloat4x4(&this->GetMatrix());
+    DirectX::XMMATRIX InverseTranspose = mds::RMath::InverseTranspose(TransformMatrix);
+
+    DirectX::XMFLOAT4X4  StoredInverseTranspose;
+    DirectX::XMStoreFloat4x4(&StoredInverseTranspose, InverseTranspose);
+
+    return StoredInverseTranspose;
+}
+
+DirectX::XMFLOAT4X4 RTransformMatrix::ComputeInverseTransposeAtOrigin() const
+{
+    RTransformMatrix NoTranslationMatrix = *this;
+    NoTranslationMatrix.SetPositon(DirectX::XMFLOAT3(0.f, 0.f, 0.f));
+
+    DirectX::XMMATRIX TransformMatrix = DirectX::XMLoadFloat4x4(&NoTranslationMatrix.GetMatrix());
+    DirectX::XMMATRIX InverseTranspose = mds::RMath::InverseTranspose(TransformMatrix);
+
+    DirectX::XMFLOAT4X4  StoredInverseTranspose;
+    DirectX::XMStoreFloat4x4(&StoredInverseTranspose, InverseTranspose);
+
+    return StoredInverseTranspose;
+}
+
 void RTransformMatrix::SetPositon(const XMFLOAT3& InPosition)
 {
     m_transform.Position = InPosition;

@@ -26,25 +26,42 @@ set(APP_SOURCES_CPP
   
   ${APP_PUBLIC_SRC}System/RSRRandomizer.h					${APP_PRIVTE_SRC}System/RSRRandomizer.cpp
   
+  ${APP_PUBLIC_SRC}GPUCompute/RSRComputeTextureTask.h		${APP_PRIVTE_SRC}GPUCompute/RSRComputeTextureTask.cpp
+  ${APP_PUBLIC_SRC}GPUCompute/Texture/RSRComputeGreebleTexture.h		${APP_PRIVTE_SRC}GPUCompute/Texture/RSRComputeGreebleTexture.cpp
+  ${APP_PUBLIC_SRC}GPUCompute/Texture/RSRComputeUVTexture.h				${APP_PRIVTE_SRC}GPUCompute/Texture/RSRComputeUVTexture.cpp
+  ${APP_PUBLIC_SRC}GPUCompute/RSRComputeTextureBuffer.h		${APP_PRIVTE_SRC}GPUCompute/RSRComputeTextureBuffer.cpp
+  ${APP_PUBLIC_SRC}GPUCompute/RSRComputePipeline.h			${APP_PRIVTE_SRC}GPUCompute/RSRComputePipeline.cpp
+
   ${APP_PUBLIC_SRC}Tools/Inputs/RSRUserInput.h				${APP_PRIVTE_SRC}Tools/Inputs/RSRUserInput.cpp
   ${APP_PUBLIC_SRC}Tools/Inputs/RSRGameInput.h				${APP_PRIVTE_SRC}Tools/Inputs/RSRGameInput.cpp
 															${APP_PRIVTE_SRC}Tools/Inputs/RSRGameInput_devices.cpp
   ${APP_PUBLIC_SRC}Tools/Inputs/RSRGameInput_XInput.h		${APP_PRIVTE_SRC}Tools/Inputs/RSRGameInput_XInput.cpp
 
   ${APP_PUBLIC_SRC}D3D/DXContext.h							${APP_PRIVTE_SRC}D3D/DXContext.cpp
-  ${APP_PUBLIC_SRC}D3D/DXPipeline.h							${APP_PRIVTE_SRC}D3D/DXPipeline.cpp
   ${APP_PUBLIC_SRC}Game/RSRPaths.h							${APP_PRIVTE_SRC}Game/RSRPaths.cpp
   ${APP_PUBLIC_SRC}Game/RSRProgramInstance.h				${APP_PRIVTE_SRC}Game/RSRProgramInstance.cpp
+  ${APP_PUBLIC_SRC}Render/RSRPipelines.h					${APP_PRIVTE_SRC}Render/RSRPipelines.cpp
+  ${APP_PUBLIC_SRC}Render/RSRPipelineStateObject.h			${APP_PRIVTE_SRC}Render/RSRPipelineStateObject.cpp
+  ${APP_PUBLIC_SRC}Render/RSR2DPSO.h						${APP_PRIVTE_SRC}Render/RSR2DPSO.cpp
+  ${APP_PUBLIC_SRC}Render/RSR3DPSO.h						${APP_PRIVTE_SRC}Render/RSR3DPSO.cpp
+  ${APP_PUBLIC_SRC}Render/RSR3DInstancedPSO.h				${APP_PRIVTE_SRC}Render/RSR3DInstancedPSO.cpp
+  ${APP_PUBLIC_SRC}Render/RSR3DDebugPSO.h					${APP_PRIVTE_SRC}Render/RSR3DDebugPSO.cpp
+  ${APP_PUBLIC_SRC}Render/RSRShaderList.h					${APP_PRIVTE_SRC}Render/RSRShaderList.cpp
   
-  ${APP_PUBLIC_SRC}Gameplay/RSRScene.h						${APP_PRIVTE_SRC}Gameplay/RSRScene.cpp
-  ${APP_PUBLIC_SRC}Gameplay/GameManager.h					${APP_PRIVTE_SRC}Gameplay/GameManager.cpp
-  ${APP_PUBLIC_SRC}Gameplay/PlayerController.h				${APP_PRIVTE_SRC}Gameplay/PlayerController.cpp
-  ${APP_PUBLIC_SRC}Gameplay/Pawn.h							${APP_PRIVTE_SRC}Gameplay/Pawn.cpp
+  ${APP_PUBLIC_SRC}Gameplay/RSRScene.h							${APP_PRIVTE_SRC}Gameplay/RSRScene.cpp
+  ${APP_PUBLIC_SRC}Gameplay/Scene/RSRSceneInstancedMeshes.h		${APP_PRIVTE_SRC}Gameplay/Scene/RSRSceneInstancedMeshes.cpp
+  ${APP_PUBLIC_SRC}Gameplay/Scene/RSRIInstancedMesheHolder.h	${APP_PRIVTE_SRC}Gameplay/Scene/RSRIInstancedMesheHolder.cpp
+  ${APP_PUBLIC_SRC}Gameplay/GameManager.h						${APP_PRIVTE_SRC}Gameplay/GameManager.cpp
+  ${APP_PUBLIC_SRC}Gameplay/PlayerController.h					${APP_PRIVTE_SRC}Gameplay/PlayerController.cpp
+  ${APP_PUBLIC_SRC}Gameplay/Pawn.h								${APP_PRIVTE_SRC}Gameplay/Pawn.cpp
   
   ${APP_PUBLIC_SRC}TheTrench/RSRTTScene.h						${APP_PRIVTE_SRC}TheTrench/RSRTTScene.cpp
   ${APP_PUBLIC_SRC}TheTrench/Gameplay/RSRTTGameManager.h		${APP_PRIVTE_SRC}TheTrench/Gameplay/RSRTTGameManager.cpp
   ${APP_PUBLIC_SRC}TheTrench/Gameplay/RSRTTPlayerController.h	${APP_PRIVTE_SRC}TheTrench/Gameplay/RSRTTPlayerController.cpp
   ${APP_PUBLIC_SRC}TheTrench/Gameplay/RSRTT404Pawn.h			${APP_PRIVTE_SRC}TheTrench/Gameplay/RSRTT404Pawn.cpp
+  
+  ${APP_PUBLIC_SRC}TheTrench/RSRODrawableBackground.h			${APP_PRIVTE_SRC}TheTrench/RSRODrawableBackground.cpp
+  ${APP_PUBLIC_SRC}TheTrench/RSRODrawableLightSource.h			${APP_PRIVTE_SRC}TheTrench/RSRODrawableLightSource.cpp
   
   ${APP_PUBLIC_SRC}Physic/LD/RSRLDType.h							${APP_PRIVTE_SRC}Physic/LD/RSRLDType.cpp
   ${APP_PUBLIC_SRC}Physic/LD/RSRLDElem.h							${APP_PRIVTE_SRC}Physic/LD/RSRLDElem.cpp
@@ -66,6 +83,8 @@ set(APP_SOURCES_CPP
   
   ${APP_PUBLIC_SRC}SceneObject/RSROScene.h					${APP_PRIVTE_SRC}SceneObject/RSROScene.cpp
   ${APP_PUBLIC_SRC}SceneObject/RSRSObject.h					${APP_PRIVTE_SRC}SceneObject/RSRSObject.cpp
+  ${APP_PUBLIC_SRC}SceneObject/RSRSObjectInstance.h			${APP_PRIVTE_SRC}SceneObject/RSRSObjectInstance.cpp
+  
 
   ${APP_PUBLIC_SRC}Managers/RSRAssetManager.h				${APP_PRIVTE_SRC}Managers/RSRAssetManager.cpp
   ${APP_PUBLIC_SRC}Managers/RSRTrenchManager.h				${APP_PRIVTE_SRC}Managers/RSRTrenchManager.cpp
@@ -80,6 +99,8 @@ set(APP_SOURCES_CPP
   ${APP_PUBLIC_SRC}Data/Meshes/RSRMesh2D.h					${APP_PRIVTE_SRC}Data/Meshes/RSRMesh2D.cpp
   ${APP_PUBLIC_SRC}Data/Meshes/RSRMesh3D.h					${APP_PRIVTE_SRC}Data/Meshes/RSRMesh3D.cpp
   ${APP_PUBLIC_SRC}Data/Meshes/RSRMeshLODs.h				${APP_PRIVTE_SRC}Data/Meshes/RSRMeshLODs.cpp
+  
+  ${APP_PUBLIC_SRC}Data/Meshes/RSRMeshInstances.h			${APP_PRIVTE_SRC}Data/Meshes/RSRMeshInstances.cpp
 
   ${APP_PUBLIC_SRC}Data/Textures/RSRTexture2D.h				${APP_PRIVTE_SRC}Data/Textures/RSRTexture2D.cpp
   
@@ -119,14 +140,21 @@ set(APP_SOURCES_CPP
 )
 
 set(APP_SOURCES_SHADER_PIPELINE
+  ${APP_PRIVTE_SRC}Shaders/SimplexNoise2D.hlsli
+
+  ${APP_PRIVTE_SRC}Shaders/Compute/ComputePipeline.hlsli
   ${APP_PRIVTE_SRC}Shaders/BasicPipeline2D.hlsli
   ${APP_PRIVTE_SRC}Shaders/BasicPipeline3D.hlsli
+  ${APP_PRIVTE_SRC}Shaders/BasicPipeline3DInstanced.hlsli
+  ${APP_PRIVTE_SRC}Shaders/BasicPipelineDebugPhysic.hlsli
   ${APP_PRIVTE_SRC}Shaders/BasicPipelineDebugPhysic.hlsli
 )
 
 set(APP_SOURCES_SHADER_ROOTSIG
+  ${APP_PRIVTE_SRC}Shaders/Compute/ComputeRootSignature.hlsl
   ${APP_PRIVTE_SRC}Shaders/BasicRootSignature2D.hlsl
   ${APP_PRIVTE_SRC}Shaders/BasicRootSignature3D.hlsl
+  ${APP_PRIVTE_SRC}Shaders/BasicRootSignature3DInstanced.hlsl
   ${APP_PRIVTE_SRC}Shaders/BasicRootSignatureDebugPhysic.hlsl
 )
 
@@ -134,16 +162,23 @@ set(APP_SOURCES_SHADER_ROOTSIG
 set(APP_SOURCES_SHADER_VERTEX
   ${APP_PRIVTE_SRC}Shaders/Basic2DVS.hlsl
   ${APP_PRIVTE_SRC}Shaders/Basic3DVS.hlsl
+  ${APP_PRIVTE_SRC}Shaders/Basic3DInstancedVS.hlsl
   ${APP_PRIVTE_SRC}Shaders/BasicDebugPhysicVS.hlsl
 )
 # List of included shaders
 set(APP_SOURCES_SHADER_PIXEL
   ${APP_PRIVTE_SRC}Shaders/Basic2DPS.hlsl
   ${APP_PRIVTE_SRC}Shaders/Basic3DPS.hlsl
+  ${APP_PRIVTE_SRC}Shaders/Basic3DInstancedPS.hlsl
   ${APP_PRIVTE_SRC}Shaders/BasicDebugPhysicPS.hlsl
 )
+# List of included shaders
+set(APP_SOURCES_SHADER_COMPUTE
+  ${APP_PRIVTE_SRC}Shaders/Compute/ComputeGreebleTexture.hlsl
+  ${APP_PRIVTE_SRC}Shaders/Compute/ComputeUVTexture.hlsl
+)
 
-set(APP_SOURCES_SHADER_ALL ${APP_SOURCES_SHADER_PIPELINE} ${APP_SOURCES_SHADER_ROOTSIG} ${APP_SOURCES_SHADER_VERTEX} ${APP_SOURCES_SHADER_PIXEL})
+set(APP_SOURCES_SHADER_ALL ${APP_SOURCES_SHADER_PIPELINE} ${APP_SOURCES_SHADER_ROOTSIG} ${APP_SOURCES_SHADER_VERTEX} ${APP_SOURCES_SHADER_PIXEL} ${APP_SOURCES_SHADER_COMPUTE})
 
 
 create_non_existing("${APP_SOURCES_CPP}" "${CMAKE_CURRENT_SOURCE_DIR}" ${APP_NAME})
@@ -162,13 +197,16 @@ add_executable ( ${APP_NAME} ${APP_SOURCES_CMake} ${APP_SOURCES_CPP} ${APP_SOURC
 
 #  VS_SHADER_ENTRYPOINT main_vert # To Set Entry function name
 set_source_files_properties(${APP_SOURCES_SHADER_ROOTSIG} PROPERTIES VS_SHADER_MODEL rootsig_1.1 VS_SHADER_TYPE RootSignature)
+set_source_files_properties(${APP_PRIVTE_SRC}Shaders/Compute/ComputeRootSignature.hlsl PROPERTIES VS_SHADER_ENTRYPOINT ROOTSIGCOMPUTE)
 set_source_files_properties(${APP_PRIVTE_SRC}Shaders/BasicRootSignature2D.hlsl PROPERTIES VS_SHADER_ENTRYPOINT ROOTSIG2D)
 set_source_files_properties(${APP_PRIVTE_SRC}Shaders/BasicRootSignature3D.hlsl PROPERTIES VS_SHADER_ENTRYPOINT ROOTSIG3D)
+set_source_files_properties(${APP_PRIVTE_SRC}Shaders/BasicRootSignature3DInstanced.hlsl PROPERTIES VS_SHADER_ENTRYPOINT ROOTSIG3DINSTANCED)
 set_source_files_properties(${APP_PRIVTE_SRC}Shaders/BasicRootSignatureDebugPhysic.hlsl PROPERTIES VS_SHADER_ENTRYPOINT ROOTSIGDP)
 
 set_source_files_properties(${APP_SOURCES_SHADER_PIPELINE} PROPERTIES VS_SHADER_MODEL 6.0)
 set_source_files_properties(${APP_SOURCES_SHADER_VERTEX} PROPERTIES VS_SHADER_MODEL 6.0 VS_SHADER_TYPE Vertex)
 set_source_files_properties(${APP_SOURCES_SHADER_PIXEL} PROPERTIES VS_SHADER_MODEL 6.0 VS_SHADER_TYPE Pixel)
+set_source_files_properties(${APP_SOURCES_SHADER_COMPUTE} PROPERTIES VS_SHADER_MODEL 6.0 VS_SHADER_TYPE Compute)
 
 
 # 'source_group' Ensure than Visual Studio Solution respect File Hierarchy in filters

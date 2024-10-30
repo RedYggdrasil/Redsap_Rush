@@ -14,11 +14,14 @@ bool RSRush::RSRPD1PlayerController::GetIsActiveAction(EAction EInAction) const
 	{
 		size_t first = mds::UT_cast(EInAction);
 		size_t second = i;
-		EMDSInputKeyType toto = m_actionToInputKeyTypes[first][second];
-		auto totoCast = mds::UT_cast(toto);
-		if (this->m_keyState[0][totoCast])
+		EMDSInputKeyType keyType = m_actionToInputKeyTypes[first][second];
+		if (keyType < EMDSInputKeyType::COUNT)
 		{
-			return true;
+			auto keyTypeNumerical = mds::UT_cast(keyType);
+			if (this->m_keyState[0][keyTypeNumerical])
+			{
+				return true;
+			}
 		}
 	}
 	return false;

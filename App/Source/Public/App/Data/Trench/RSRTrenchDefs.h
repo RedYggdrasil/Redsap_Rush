@@ -55,13 +55,13 @@ namespace RSRush
 			}
 			return result;
 		}
-		static constexpr float VOXEL_SIZE = 0.5f;//0.f;
+		static constexpr float VOXEL_SIZE = 2.0f;//0.f;
 		static constexpr DirectX::XMFLOAT3 VOXEL_SIZE_3D = { VOXEL_SIZE, VOXEL_SIZE, VOXEL_SIZE };
 		static constexpr float SVXL(const int32_t InVoxelSize) { return InVoxelSize * VOXEL_SIZE; };
 		static constexpr float SVXL(const float InVoxelSize) { return InVoxelSize * VOXEL_SIZE; };
 		static constexpr DirectX::XMFLOAT3 SVXL(const DirectX::XMINT3& InVoxelCoord) { return { SVXL(InVoxelCoord.x),SVXL(InVoxelCoord.y), SVXL(InVoxelCoord.z), }; };
 
-		static constexpr int32_t /*Y*/HALF_TRENCH_WIDTH_VXL = 4;
+		static constexpr int32_t /*Y*/HALF_TRENCH_WIDTH_VXL = 6;
 		static constexpr float /*Y*/HALF_TRENCH_WIDTH = SVXL(HALF_TRENCH_WIDTH_VXL);
 
 		static constexpr int32_t TRENCH_WIDTH_VXL = HALF_TRENCH_WIDTH_VXL * 2;
@@ -194,6 +194,34 @@ namespace RSRush
 				return DirectX::XMINT3(0, 0, 0);
 			}
 		}
+		/// <summary>
+		/// Direction 2D to 3D do not increment on the positive axis values, as 2D { 0, 0 } is 3D { 0, 0, Depth } Min point
+		/// </summary>
+		/// <param name="EInDirection"></param>
+		/// <returns></returns>
+		static constexpr DirectX::XMINT3 DIRECTION_2D_TO_3D_INCREMENT(ESurfaceDirection EInDirection)
+		{
+			switch (EInDirection)
+			{
+			case ESurfaceDirection::FRWRD:
+				return DirectX::XMINT3(0, 0, 0);
+			case ESurfaceDirection::BACK:
+				return DIR_BACK;
+			case ESurfaceDirection::LEFT:
+				return DIR_LEFT;
+			case ESurfaceDirection::RIGHT:
+				return DirectX::XMINT3(0, 0, 0);
+			case ESurfaceDirection::UP:
+				return DirectX::XMINT3(0, 0, 0);
+			case ESurfaceDirection::DOWN:
+				return DIR_DOWN;
+			case ESurfaceDirection::NONE:
+				//Fallback
+			default:
+				return DirectX::XMINT3(0, 0, 0);
+			}
+		}
+
 		static constexpr DirectX::XMFLOAT4X4 TRANSPOSITION(ESurfaceDirection EInDirection)
 		{
 			switch (EInDirection)

@@ -16,9 +16,9 @@
 #include "App/Tools/ImageLoader.h"
 
 
+#include "App/Render/RSRPipelines.h"
 #include "App/Libs/WinInclude.h"
 #include "App/D3D/DXContext.h"
-#include "App/D3D/DXPipeline.h"
 #include "App/Tools/Shader.h"
 #include "App/Tools/Window.h"
 #include "App/Managers/RSRAssetManager.h"
@@ -34,27 +34,6 @@ using Microsoft::WRL::ComPtr;
 using namespace RSRush;
 
 
-namespace RSRush
-{
-	namespace EShaderName
-	{
-		std::string BasicRootSignature2D("BasicRootSignature2D.cso");
-		std::string BasicRootSignature3D("BasicRootSignature3D.cso");
-#if DEBUG_PHYSIC
-		std::string BasicRootSignatureDebugPhysic("BasicRootSignatureDebugPhysic.cso");
-#endif
-		std::string basicVS2DShader("Basic2DVS.cso");
-		std::string basicPS2DShader("Basic2DPS.cso");
-
-		std::string basicVS3DShader("Basic3DVS.cso");
-		std::string basicPS3DShader("Basic3DPS.cso");
-
-#if DEBUG_PHYSIC
-		std::string basicVSDebugPhysicShader("BasicDebugPhysicVS.cso");
-		std::string basicPSDebugPhysicShader("BasicDebugPhysicPS.cso");
-#endif
-	};
-}
 
 void RSRProgramInstance::RendererData::ResetDatas()
 
@@ -120,9 +99,11 @@ void RSRProgramInstance::Run(int argc, char** argv)
 		InitializeProgram();
 	}
 
+
 	//DXWindow::Get().SetFullscreen(true);
 	{
-		std::shared_ptr<RSRScene> scene = CreateScene(START_SCENE);
+		bool bIsTheTrench = false;
+		std::shared_ptr<RSRScene> scene = CreateScene(bIsTheTrench ? EStartScene::TheTrench : EStartScene::PhysicDemo1/*START_SCENE*/);
 		scene->Load();
 		SetCurrentScene(scene);
 		scene.reset();
@@ -187,8 +168,8 @@ void RSRProgramInstance::Run(int argc, char** argv)
 
 	while (!DXWindow::Get().ShouldClose())
 	{
+		//Pre Frame Setups
 		{
-			//Pre Frame Setups
 			ZoneScopedN("Pre Frame Setups");
 			//Process windows messages
 			DXWindow::Get().Update();
@@ -205,9 +186,9 @@ void RSRProgramInstance::Run(int argc, char** argv)
 				DXWindow::Get().Resize();
 			}
 		}
-		
+
+		//Notify Renderer of Frame Task
 		{
-			//Notify Renderer of Frame Task
 			ZoneScopedN("Notify Renderer of Frame Task");
 			RenderingFrameDeltaTimeSecond = ComputeFrameDeltaTimeSecond;
 			RenderingFrameFromStartSecond = ComputeFrameFromStartSecond;
@@ -227,9 +208,9 @@ void RSRProgramInstance::Run(int argc, char** argv)
 				);
 			}
 		}
-
+		
+		//Compute Frame
 		{
-			//Compute Frame
 			ZoneScopedN("Compute Frame");
 			++CompteFrameIndex;
 			ComputeFrameDeltaTimeSecond = mds::RTimekeeper::BeginNewFrame();
@@ -252,12 +233,20 @@ void RSRProgramInstance::Run(int argc, char** argv)
 			m_rendererData.WaitForFrame(RenderingFrameIndex);
 		}
 
+		//Sync Compute and Rendering
 		{
-			//Sync Compute and Rendering
 			ZoneScopedN("Sync Compute and Rendering");
 			RSRPhysicManager::Get().LateTickSync(ComputeFrameFromStartSecond, ComputeFrameDeltaTimeSecond);
 			//Update Program State in sync before next render
 			m_currentScene->LateTickSync(ComputeFrameFromStartSecond, ComputeFrameDeltaTimeSecond);
+		}
+		//Upload new sync buffer data to GPU
+		{
+			ZoneScopedN("Upload new sync buffer data to GPU");
+			ID3D12GraphicsCommandList7* frameUploadList = DXContext::Get().InitFrameUploadList();
+			m_currentScene->UpdateMeshInstanceBuffers(ComputeFrameFromStartSecond, ComputeFrameDeltaTimeSecond, frameUploadList);
+			DXContext::Get().ExecuteFrameUploadCommandList();
+			m_currentScene->ClearUnusedMeshInstanceBuffers();
 		}
 		FrameMark;
 	}
@@ -275,59 +264,26 @@ void RSRProgramInstance::InitializeProgram()
 	m_randomizer->Initialize(/*uint64_t seed or none (random seed)*/);
 	mds::RTaskManager::Get().Init(12);
 
-	// --- Shaders ---
-	m_shaders.emplace(EShaderName::BasicRootSignature2D, std::make_unique<Shader>(EShaderName::BasicRootSignature2D));
-	
-	m_shaders.emplace(EShaderName::BasicRootSignature3D, std::make_unique<Shader>(EShaderName::BasicRootSignature3D));
-#if DEBUG_PHYSIC
-	m_shaders.emplace(EShaderName::BasicRootSignatureDebugPhysic, std::make_unique<Shader>(EShaderName::BasicRootSignatureDebugPhysic));
-#endif
-
-	m_shaders.emplace(EShaderName::basicVS2DShader, std::make_unique<Shader>(EShaderName::basicVS2DShader));
-	m_shaders.emplace(EShaderName::basicPS2DShader, std::make_unique<Shader>(EShaderName::basicPS2DShader));
-
-	m_shaders.emplace(EShaderName::basicVS3DShader, std::make_unique<Shader>(EShaderName::basicVS3DShader));
-	m_shaders.emplace(EShaderName::basicPS3DShader, std::make_unique<Shader>(EShaderName::basicPS3DShader));
-
-#if DEBUG_PHYSIC
-	m_shaders.emplace(EShaderName::basicVSDebugPhysicShader, std::make_unique<Shader>(EShaderName::basicVSDebugPhysicShader));
-	m_shaders.emplace(EShaderName::basicPSDebugPhysicShader, std::make_unique<Shader>(EShaderName::basicPSDebugPhysicShader));
-#endif
-	
+//	
 	if (!DXContext::Get().Init())
 	{
 		//std::cout << " Bad " << std::endl;
 		return;
 	}
-	// --- Create root signature ---
-	_R_FAILED(DXContext::Get().GetDevice()->CreateRootSignature(0, m_shaders[EShaderName::BasicRootSignature2D]->GetBuffer(), m_shaders[EShaderName::BasicRootSignature2D]->GetSize(), IID_PPV_ARGS(&m_rootSignature2D)));
-	_R_FAILED(DXContext::Get().GetDevice()->CreateRootSignature(0, m_shaders[EShaderName::BasicRootSignature3D]->GetBuffer(), m_shaders[EShaderName::BasicRootSignature3D]->GetSize(), IID_PPV_ARGS(&m_rootSignature3D)));
-#if DEBUG_PHYSIC
-	_R_FAILED(DXContext::Get().GetDevice()->CreateRootSignature(0, m_shaders[EShaderName::BasicRootSignatureDebugPhysic]->GetBuffer(), m_shaders[EShaderName::BasicRootSignatureDebugPhysic]->GetSize(), IID_PPV_ARGS(&m_rootSignatureDebugPhysic)));
-#endif
+
 
 	RSRAssetManager* pAssetManager = &RSRAssetManager::Get();
 
-	if (!DXPipeline::Get().Init
-			(
-				m_rootSignature2D.Get(), m_shaders[EShaderName::basicVS2DShader].get(), m_shaders[EShaderName::basicPS2DShader].get(),
-				m_rootSignature3D.Get(), m_shaders[EShaderName::basicVS3DShader].get(), m_shaders[EShaderName::basicPS3DShader].get()
-#if DEBUG_PHYSIC
-				, m_rootSignatureDebugPhysic.Get(), m_shaders[EShaderName::basicVSDebugPhysicShader].get(), m_shaders[EShaderName::basicPSDebugPhysicShader].get()
-#endif
-			)
-		)
+	m_pipelines = std::make_unique<RSRPipelines>(this);
+
+	if (!m_pipelines || !m_pipelines->GetIsCorrectlyLoaded())
 	{
-		RSRLog::LogException(TEXT("Cannot initialize DXPipeline !"));
+		RSRLog::LogException(TEXT("Cannot initialize RSRPipeline !"));
 		return;
 	}
-	_R_FAILED(DXContext::Get().GetDevice()->CreateGraphicsPipelineState(&DXPipeline::Get().GetStateDesc2D(), IID_PPV_ARGS(&m_pso2D)));
-	_R_FAILED(DXContext::Get().GetDevice()->CreateGraphicsPipelineState(&DXPipeline::Get().GetStateDesc3D(), IID_PPV_ARGS(&m_pso3D)));
-#if DEBUG_PHYSIC
-	_R_FAILED(DXContext::Get().GetDevice()->CreateGraphicsPipelineState(&DXPipeline::Get().GetStateDescDebugPhysic(), IID_PPV_ARGS(&m_psoDebugPhysic)));
-#endif
 
 	_R_FALSE(DXWindow::Get().Init());
+	DXWindow::Get().SetUsingVerticalSync(!GetPIStatistics().bTearingSupported || USE_VSYNC_DEFAULT_VALUE);
 	_R_FALSE(RSRBasicShapes::Get().Init(pAssetManager));
 	_R_FALSE(RSRPhysicManager::Get().Init(&RSRBasicShapes::Get()));
 	_R_FALSE(RSRGameInput::Get().Init());
@@ -348,26 +304,13 @@ void RSRProgramInstance::ShutdownProgram()
 		}
 	}
 	m_scenes.clear();
-	m_shaders.clear();
 
 	RSRGameInput::Get().Shutdown();
 	RSRPhysicManager::Get().Shutdown();
 	RSRBasicShapes::Get().Shutdown();
 	DXWindow::Get().Shutdown();
 
-
-#if DEBUG_PHYSIC
-	m_psoDebugPhysic.Reset();
-	m_rootSignatureDebugPhysic.Reset();
-#endif
-
-	m_pso3D.Reset();
-	m_rootSignature3D.Reset();
-
-	m_pso2D.Reset();
-	m_rootSignature2D.Reset();
-
-	DXPipeline::Get().Shutdown();
+	m_pipelines.reset();
 	DXContext::Get().Shutdown();
 
 	m_randomizer.reset();
@@ -463,3 +406,44 @@ bool RSRProgramInstance::UNIT_TEST()
 	return bAllSucessfull;
 }
 
+Microsoft::WRL::ComPtr<ID3D12RootSignature> RSRush::RSRProgramInstance::GetRootSig2D() const
+{
+	return m_pipelines->GetRSRPSO2D().GetRootSig();
+}
+
+Microsoft::WRL::ComPtr<ID3D12PipelineState> RSRush::RSRProgramInstance::GetPSO2D() const
+{
+	return m_pipelines->GetRSRPSO2D().GetPSO();
+}
+
+Microsoft::WRL::ComPtr<ID3D12RootSignature> RSRush::RSRProgramInstance::GetRootSig3D() const
+{
+	return m_pipelines->GetRSRPSO3D().GetRootSig();
+}
+
+Microsoft::WRL::ComPtr<ID3D12PipelineState> RSRush::RSRProgramInstance::GetPSO3D() const
+{
+	return m_pipelines->GetRSRPSO3D().GetPSO();
+}
+
+Microsoft::WRL::ComPtr<ID3D12RootSignature> RSRush::RSRProgramInstance::GetRootSig3DInstanced() const
+{
+	return m_pipelines->GetRSRPSO3DInstanced().GetRootSig();
+}
+
+Microsoft::WRL::ComPtr<ID3D12PipelineState> RSRush::RSRProgramInstance::GetPSO3DInstanced() const
+{
+	return m_pipelines->GetRSRPSO3DInstanced().GetPSO();
+}
+
+#if DEBUG_PHYSIC
+Microsoft::WRL::ComPtr<ID3D12RootSignature> RSRush::RSRProgramInstance::GetRootSigDebugPhysic() const
+{
+	return m_pipelines->GetRSRPSO3DDebugPhysic().GetRootSig();
+}
+
+Microsoft::WRL::ComPtr<ID3D12PipelineState> RSRush::RSRProgramInstance::GetPSODebugPhysic() const
+{
+	return m_pipelines->GetRSRPSO3DDebugPhysic().GetPSO();
+}
+#endif

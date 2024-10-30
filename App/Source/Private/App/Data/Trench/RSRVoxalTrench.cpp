@@ -13,10 +13,13 @@
 #include "App/System/RSRRandomizer.h"
 #include "App/Tools/RSRLog.h"
 #include "App/Data/Trench/Obstacles/RSRVoxelObstacle.h"
+#include "App/Managers/RSRTrenchManager.h"
 
 #include <array>
 #include <unordered_map>
 #include <Tracy.hpp>
+#include "MDS/Threads/RTaskFunction.h"
+#include "MDS/Threads/RTaskManager.h"
 //
 //#include <format>
 //
@@ -32,9 +35,12 @@ using namespace RSRush::RSRTrenchDefs;
 
 using Super = RSRBasicTrench;
 
-RSRVoxalTrench::RSRVoxalTrench()
-	:Super(), m_grid()
+
+RSRush::RSRVoxalTrench::RSRVoxalTrench(RSRTrenchManager* InTrenchManager, const std::vector<uint16_t>& InSideGreedbleTextureIDs, const std::vector<uint16_t>& InTopGreedbleTextureIDs)
+:Super(InTrenchManager), m_grid(),
+m_sideGreedbleTextureIDs(InSideGreedbleTextureIDs), m_topGreedbleTextureIDs(InTopGreedbleTextureIDs)
 {
+
 }
 
 RSRVoxalTrench::~RSRVoxalTrench()
@@ -62,8 +68,6 @@ void RSRVoxalTrench::GenerateGeometry()
 	ZoneScopedN("VoxalTrench GenerateGeometry");
 
 	std::mt19937_64 gen = RSRRandomizer::Get().GetTrenchGenerator(m_instanceID);
-	static std::uniform_int_distribution<> dist(0, 3);
-	uint16_t UseTextureIndex = dist(gen);
 
 	XMFLOAT3 DEFAULT_COLOR = XMFLOAT3(1.f, 1.f, 1.f);
 
@@ -147,10 +151,9 @@ void RSRVoxalTrench::GenerateGeometry()
 	{
 		XMFLOAT3 SurfaceNormal;
 		XMFLOAT3 DefaultColor;
-		uint32_t DefaultTextureIdx;
 	public:
 		inline XMFLOAT2 NormUVToTVerticeUV(const XMFLOAT2& InNormUV) const { return InNormUV; }
-		VertexPositionUVColor TVertexFromNormVertAndSurNormCoord(const XMFLOAT3& InNormal, const XMFLOAT3& InVertPos, const XMFLOAT2& InNormPos)
+		VertexPositionUVColor TVertexFromNormVertAndSurNormCoord(const XMFLOAT3& InNormal, const XMFLOAT3& InVertPos, const XMFLOAT2& InNormPos, const uint16_t InTextureID)
 		{
 			return
 			{
@@ -158,34 +161,114 @@ void RSRVoxalTrench::GenerateGeometry()
 				.normal = InNormal,
 				.color = DefaultColor,
 				.uv0 = NormUVToTVerticeUV(InNormPos),
-				.textureIndex = DefaultTextureIdx
+				.textureIndex = InTextureID
 			};
 		}
 	};
 
-
 	{
 		ZoneScopedN("VoxalTrench Greeble");
-		for (RSRVoxalPlane& plane : planes)
-		{
-			VertexProvider vertProv
+		size_t cPlanes = planes.size();
+		size_t cPlanesMinus = planes.size();
+		std::atomic<size_t> doneTasks = 0;
+		std::vector<std::shared_ptr<mds::RTask>> greebleSurfaceTasks;
+		greebleSurfaceTasks.reserve(cPlanes);
+
+		std::vector<std::vector<VertexPositionUVColor>> verticesPerPlanes(cPlanes, std::vector<VertexPositionUVColor>());
+		std::vector<std::vector<UINT_VRTX_IDX>> tiranglesPerPlanes(cPlanes, std::vector<UINT_VRTX_IDX>());
+
+
+		for (size_t i = 0; i < cPlanes; ++i)
+		{			
+			if (true)
 			{
-				.SurfaceNormal = NORMAL(plane.GetDirection()),
-				.DefaultColor = DEFAULT_COLOR,
-				.DefaultTextureIdx = UseTextureIndex
-			};
-			//int32_t depthValue = plane.GetDefaultDepth();
-			//mds::RTransform trs;
-			//XMINT3 coord3D = plane.GetCoord3(InCoord2D);
-			XMFLOAT4X4 transposeTranslate = plane.GetSVXLTranslateTransformMatrix();
+				greebleSurfaceTasks.push_back
+				(std::make_shared<mds::RTaskFunction>
+					(
+						[
+							pPlane = &planes[i], pVertices = &verticesPerPlanes[i], pTriangles = &tiranglesPerPlanes[i], 
+							pGrid = &this->m_grid, DEFAULT_COLOR, instID = this->m_instanceID,
+							pSideGreedbleTextureIDs = &this->m_sideGreedbleTextureIDs, pTopGreedbleTextureIDs = &this->m_topGreedbleTextureIDs
+						]()->void
+						{
+							ZoneScopedN("VoxalTrench Greeble Plane");
+							VertexProvider vertProv
+							{
+								.SurfaceNormal = NORMAL(pPlane->GetDirection()),
+								.DefaultColor = DEFAULT_COLOR
+							};
+							XMFLOAT4X4 transposeTranslate = pPlane->GetSVXLTranslateTransformMatrix();
 
-			bool bIsClockwise = !mds::RMath::GetIsDrawClockwise(NORMAL(plane.GetDirection()), transposeTranslate);
-			mds::NSRGreeble::RGreeble<VertexPositionUVColor, VertexProvider, UINT_VRTX_IDX> greeble(vertProv);
+							bool bIsClockwise = !mds::RMath::GetIsDrawClockwise(NORMAL(pPlane->GetDirection()), transposeTranslate);
+							mds::NSRGreeble::RGreeble<VertexPositionUVColor, VertexProvider, UINT_VRTX_IDX> greeble(vertProv);
 
-			greeble.Generate(RSRRandomizer::Get().GetTrenchGenerator(m_instanceID), plane.GenerateRVoxelSurface(), transposeTranslate, NORMAL(plane.GetDirection()), bIsClockwise, vertices, triangles);
-			m_grid.FillPlaneInfos(&plane);
+							greeble.Generate
+							(
+								RSRRandomizer::Get().GetTrenchGenerator(instID),
+								pPlane->GenerateRVoxelSurface(), transposeTranslate,
+								NORMAL(pPlane->GetDirection()), bIsClockwise,
+								*pSideGreedbleTextureIDs, *pTopGreedbleTextureIDs,
+								*pVertices, *pTriangles
+							);
+							pGrid->FillPlaneInfos(pPlane);
+						},
+						[&doneTasks](std::shared_ptr<mds::RTask> InTask)->void
+						{
+							doneTasks.fetch_add(1, std::memory_order_relaxed);
+						}
+					)
+				);
+				//Use this instead to run on current thread
+				//greebleSurfaceTasks.back()->operator()();
+			}
 		}
+
+
+		mds::RTaskManager::Get().EnqueueTasks(greebleSurfaceTasks);
+		
+		while (doneTasks.load(std::memory_order_relaxed) < cPlanes)
+		{
+			// Busy-wait loop
+			std::this_thread::yield();
+		}
+
+		//Initial Offsets
+		size_t offsetVerts = vertices.size();
+		size_t offsetTris = triangles.size();
+
+
+		//resize vectors
+		size_t cVertToAdd = 0;
+		size_t cTrisToAdd = 0;
+		for (size_t i = 0; i < cPlanes; ++i)
+		{
+			cVertToAdd += verticesPerPlanes[i].size();
+			cTrisToAdd += tiranglesPerPlanes[i].size();
+		}
+		vertices.resize(vertices.size() + cVertToAdd);
+		triangles.resize(triangles.size() + cTrisToAdd);
+
+		//Copy data to end vector and fix triangle indexes
+		for (size_t i = 0; i < cPlanes; ++i)
+		{
+			std::memcpy(vertices.data() + offsetVerts, verticesPerPlanes[i].data(), verticesPerPlanes[i].size() * sizeof(VertexPositionUVColor));
+			std::memcpy(triangles.data() + offsetTris, tiranglesPerPlanes[i].data(), tiranglesPerPlanes[i].size() * sizeof(RSRush::UINT_VRTX_IDX));
+
+			size_t newTrianglesSize = offsetTris + tiranglesPerPlanes[i].size();
+			RSRush::UINT_VRTX_IDX typedOffsetVerts = (RSRush::UINT_VRTX_IDX)offsetVerts;
+
+			for (size_t triangleIDX = offsetTris; triangleIDX < newTrianglesSize; ++triangleIDX)
+			{
+				triangles[triangleIDX] = triangles[triangleIDX] + typedOffsetVerts;
+			}
+
+			offsetVerts += verticesPerPlanes[i].size();
+			offsetTris += tiranglesPerPlanes[i].size() /*(newTrianglesSize)*/;
+		}
+		//verticesPerPlanes.clear();
+		//tiranglesPerPlanes.clear();
 	}
+
 
 	for (auto& obstacle : m_obstacles)
 	{
@@ -200,16 +283,6 @@ void RSRVoxalTrench::GenerateGeometry()
 			triangles
 			);
 	m_mainMesh.Insert(voxalTrenchMesh, FLT_MAX);
-	//RSRLog::Log(LOG_DISPLAY, TEXT("Generated {} quads"), meshQuads.size());
-	//size_t quadI = 0;
-	//for (auto quad : meshQuads)
-	//{
-	//	if (false)
-	//	{
-	//		RSRLog::Log(LOG_DISPLAY, TEXT("Quad [{}] : Min : [{}], Size : [{}]"), quadI, mds::_tostring(quad.Min), mds::_tostring(quad.SizeXY));
-	//	}
-	//	++quadI;
-	//}
 }
 
 void RSRVoxalTrench::GeneratePhysicColliders()
@@ -236,7 +309,7 @@ size_t RSRush::RSRVoxalTrench::GenerateObstacles()
 {
 	ZoneScopedN("VoxalTrench GenerateObstacles");
 	std::mt19937_64 gen = RSRRandomizer::Get().GetTrenchGenerator(m_instanceID);
-	static std::uniform_int_distribution<> dist(0, 3);
+	static std::uniform_int_distribution<> dist(0, 12);
 	size_t nbObstaclesMax = dist(gen);
 
 	m_obstacles.clear();

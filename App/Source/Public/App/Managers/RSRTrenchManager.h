@@ -5,6 +5,7 @@
 #include <vector>
 #include <memory>
 #include <deque>
+#include <random>
 
 namespace RSRush
 {
@@ -12,14 +13,14 @@ namespace RSRush
 	class RSRPlayerPath;
 	class RSRTrenchManager
 	{
-	private:
-		static RSRTrenchManager Instance;
-
+		std::mt19937_64 gen;
+		std::vector<uint16_t> m_sideGreedbleTextureIDs;
+		std::vector<uint16_t> m_topGreedbleTextureIDs;
+		
 	public:
 #pragma region Instance
 		RSRTrenchManager(const RSRTrenchManager&) = delete;
 		RSRTrenchManager& operator=(const RSRTrenchManager&) = delete;
-		static RSRTrenchManager& Get() { return Instance; }
 #pragma endregion
 
 	protected:
@@ -43,10 +44,9 @@ namespace RSRush
 		bool FreeUploadBuffers();
 		bool FreeResourceBuffers();
 	public:
-		bool XM_CALLCONV DrawTrench(DirectX::FXMVECTOR InCameraPosition, ID3D12GraphicsCommandList7* InDrawCommandList);
-	protected:
-		RSRTrenchManager();
-
+		bool DrawTrench(DirectX::XMFLOAT4 InCameraPosition, ID3D12GraphicsCommandList7* InDrawCommandList);
+	public:
+		RSRTrenchManager(std::vector<uint16_t>&& InSideGreedbleTextureIDs, std::vector<uint16_t>&& InTopGreedbleTextureIDs);
 	private:
 		bool IsNeedToGenerateSegments(double InCurrentProgression) const;
 

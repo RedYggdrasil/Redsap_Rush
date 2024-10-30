@@ -18,7 +18,7 @@ bool RSRGameInput::HandleGameInputMouse(IGameInputReading* InGameInputReading, R
     if (bGetSucess)
     {
 #define SET_MOUSE_VALUE(InputEnum, GameInputMask) \
-    InUserInput->m_keyState[0][mds::UT_cast(InputEnum)] = (bool)(mouseState.buttons & GameInputMask);
+    InUserInput->m_keyState[0][mds::UT_cast(InputEnum)] |= (bool)(mouseState.buttons & GameInputMask);
 
         SET_MOUSE_VALUE(EMDSInputKeyType::MDS_IK_LBUTTON, GameInputMouseButtons::GameInputMouseLeftButton);
         SET_MOUSE_VALUE(EMDSInputKeyType::MDS_IK_RBUTTON, GameInputMouseButtons::GameInputMouseRightButton);
@@ -36,7 +36,6 @@ bool RSRGameInput::HandleGameInputMouse(IGameInputReading* InGameInputReading, R
     }
 
     InUserInput->m_axis2D[0][mds::UT_cast(EMDSAxis2DType::MDS_A2D_MS_WND_NRML)] = DXWindow::Get().GetMouseRelativePosition();
-    //RSRLog::Log(LOG_DISPLAY, TEXT("XPos : {}, YPos : {}"), DXWindow::Get().GetMouseRelativePosition().x, DXWindow::Get().GetMouseRelativePosition().y);
     return bGetSucess;
 };
 
@@ -74,7 +73,7 @@ bool RSRGameInput::HandleGameInputGamePad(IGameInputReading* InGameInputReading,
         bOutHasInput = bOutHasInput || (newInputState.buttons != GameInputGamepadButtons::GameInputGamepadNone);
 
 #define SET_BUTTON_VALUE(InputEnum, GameInputMask) \
-    InUserInput->m_keyState[0][mds::UT_cast(InputEnum)] = (bool)(newInputState.buttons & GameInputMask);
+    InUserInput->m_keyState[0][mds::UT_cast(InputEnum)] |= (bool)(newInputState.buttons & GameInputMask);
 
         SET_BUTTON_VALUE(EMDSInputKeyType::MDS_IK_GMPD_MENU, GameInputGamepadButtons::GameInputGamepadMenu);
         SET_BUTTON_VALUE(EMDSInputKeyType::MDS_IK_GMPD_VIEW, GameInputGamepadButtons::GameInputGamepadView);

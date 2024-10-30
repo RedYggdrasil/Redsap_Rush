@@ -37,9 +37,9 @@ std::shared_ptr<RSRSObject> CreateobjectFromLDElem(const RSRLDElem& InLDElem)
 	switch (InLDElem.Type)	
 	{
 	case RSRLDType::Square:
-		return std::make_shared<RSRPD1StaticSObject>(InLDElem.Transform, WORLD_STATIC, false);
+		return std::make_shared<RSRPD1StaticSObject>(std::move(INIT_INSTANCE_DATA(6)), InLDElem.Transform, WORLD_STATIC, false);
 	case RSRLDType::Sphere:
-		return std::make_shared<RSRPD1SphereSObject>(InLDElem.Transform, WORLD_STATIC, false);
+		return std::make_shared<RSRPD1SphereSObject>(std::move(INIT_INSTANCE_DATA(0)), InLDElem.Transform, WORLD_STATIC, false);
 	default:
 		RSRLog::Log(LOG_ERROR, TEXT("Type '{}' Unhandled in switch for 'CreateobjectFromLDElem' in 'RSRLDReader.cpp' file !"));
 		break;

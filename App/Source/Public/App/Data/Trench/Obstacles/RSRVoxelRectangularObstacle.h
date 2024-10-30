@@ -25,6 +25,7 @@ namespace RSRush
 		virtual bool FillPhysicBodyData(RSRCollidersBody& InOutPhysicBody) R_PURE_OVERRIDE;
 	private:
 		bool AttemptHorizontalBarrierPacement(std::mt19937_64& InOutGenerator, const RSRVoxelRectangle& InSpawnArea, RSRVoxelRectangle& OutResultingObstacle);
+		bool AttemptVerticalSpirePacement(std::mt19937_64& InOutGenerator, const RSRVoxelRectangle& InSpawnArea, RSRVoxelRectangle& OutResultingObstacle);
 
 	};
 };

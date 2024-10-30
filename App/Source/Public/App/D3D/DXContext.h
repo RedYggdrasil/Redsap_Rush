@@ -25,15 +25,26 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList7> m_cmdList;
 
 private :
+	//For frame asynchronous upload, exemple is large texture and asset upload, to be ready at an unspecified time
 	bool m_bHasUploadTask = false;
-	HANDLE m_uploadFenceEvent = nullptr;
-	UINT64 m_uploadFenceValue = 0;
-	Microsoft::WRL::ComPtr<ID3D12Fence1> m_uploadFence;
-	Microsoft::WRL::ComPtr<ID3D12CommandQueue> m_uploadCmdQueue;
+	HANDLE m_asyncUploadFenceEvent = nullptr;
+	UINT64 m_asyncUploadFenceValue = 0;
+	Microsoft::WRL::ComPtr<ID3D12Fence1> m_asyncUploadFence;
+	Microsoft::WRL::ComPtr<ID3D12CommandQueue> m_asyncUploadCmdQueue;
 
-	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> m_uploadCmdAllocator[2];
-	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList7> m_uploadCmdList[2];
-	inline size_t GetRecordingUpldListIndex() const { return m_uploadFenceValue % 2; }
+	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> m_asyncUploadCmdAllocator[2];
+	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList7> m_asyncUploadCmdList[2];
+	inline size_t GetRecordingUpldListIndex() const { return m_asyncUploadFenceValue % 2; }
+
+private:
+	//For frame sensitive upload, need to be completed to draw the next frame
+	HANDLE m_frameUploadFenceEvent = nullptr;
+	UINT64 m_frameUploadFenceValue = 0;
+	Microsoft::WRL::ComPtr<ID3D12Fence1> m_frameUploadFence;
+	Microsoft::WRL::ComPtr<ID3D12CommandQueue> m_frameUploadCmdQueue;
+
+	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> m_frameUploadCmdAllocator;
+	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList7> m_frameUploadCmdList;
 
 public:
 	bool Init();
@@ -64,21 +75,29 @@ public:
 		return m_renderCmdQueue;
 	}
 
-	inline ID3D12GraphicsCommandList7* GetUploadList()
+	inline ID3D12GraphicsCommandList7* GetAsyncUploadList()
 	{
-		return m_uploadCmdList[GetRecordingUpldListIndex()].Get();
+		return m_asyncUploadCmdList[GetRecordingUpldListIndex()].Get();
 	}
 	//Notify the Context than the uploadCmdList has tasks to execute and get the next Fence Value
-	UINT64 ReportAddedUploadTask();
-	UINT64 UpdateUploadCommandQueueState(double InDeltaTime);
+	UINT64 ReportAddedAsyncUploadTask();
+	UINT64 UpdateAsyncUploadCommandQueueState(double InDeltaTime);
+
+
+	ID3D12GraphicsCommandList7* InitFrameUploadList();
+
+	void SignalFrameUploadAndWait();
+	void ExecuteFrameUploadCommandList();
 private:
 	bool InitRenderQueue();
-	bool InitUploadQueue();
+	bool InitAsyncUploadQueue();
+	bool InitFrameUploadQueue();
 
 	void ShutdownRenderQueue();
-	void ShutdownUploadQueue();
+	void ShutdownAsyncUploadQueue();
+	void ShutdownFrameUploadQueue();
 
-	bool StartUpload();
+	bool StartAsyncUpload();
 public:
 	DXContext(const DXContext&) = delete;
 	DXContext& operator=(const DXContext&) = delete;

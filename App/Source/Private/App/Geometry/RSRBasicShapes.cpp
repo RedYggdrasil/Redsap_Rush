@@ -24,13 +24,13 @@ bool RSRBasicShapes::Init(RSRAssetManager* InAssetManager)
         return false;
     }
     bool allSucess = true;
-    m_defaultSquare = GetRegisterNewSquare(DEFAULT_SQUARE_NAME, FACE_COLOR_DEFAULT, InAssetManager);
+    m_defaultSquare = GetRegisterNewSquare(DEFAULT_SQUARE_NAME, FACE_COLOR_DEFAULT, 0Ui32, InAssetManager);
     if (!m_defaultSquare) 
     {
         RSRLog::LogError(TEXT("Cannot initialize default Square BasicShapes !"));
         return false; 
     }
-    m_defaultPlane = GetRegisterNewPlane(DEFAULT_PLANE_NAME, FACE_COLOR_DEFAULT, InAssetManager);
+    m_defaultPlane = GetRegisterNewPlane(DEFAULT_PLANE_NAME, FACE_COLOR_DEFAULT, 0Ui32, InAssetManager);
     if (!m_defaultPlane)
     {
         RSRLog::LogError(TEXT("Cannot initialize default Plane BasicShapes !"));
@@ -93,7 +93,7 @@ void RSRBasicShapes::Shutdown()
     m_defaultSquare.reset();
 }
 
-RSRSharedMesh3DPtr RSRBasicShapes::GetRegisterNewSquare(const std::string_view InShapeName, const XMFLOAT3& InVertexColor, RSRAssetManager* InAssetManager)
+RSRSharedMesh3DPtr RSRBasicShapes::GetRegisterNewSquare(const std::string_view InShapeName, const XMFLOAT3& InVertexColor, uint32_t InTextureIndex, RSRAssetManager* InAssetManager)
 {
     if (!InAssetManager)
     {
@@ -107,47 +107,47 @@ RSRSharedMesh3DPtr RSRBasicShapes::GetRegisterNewSquare(const std::string_view I
             std::vector<VertexPositionUVColor>
     {
         // Front face
-        { .pos = XFP3(0.5f, -0.5f, 0.5f),   .color = InVertexColor, .uv0 = XMFLOAT2(1.f, 1.f) },
-        { .pos = XFP3(-0.5f, 0.5f, 0.5f),   .color = InVertexColor, .uv0 = XMFLOAT2(0.f, 0.f) },
-        { .pos = XFP3(-0.5f, -0.5f, 0.5f),  .color = InVertexColor, .uv0 = XMFLOAT2(0.f, 1.f) },
-        { .pos = XFP3(0.5f, 0.5f, 0.5f),    .color = InVertexColor, .uv0 = XMFLOAT2(1.f, 0.f) },
-        { .pos = XFP3(-0.5f, 0.5f, 0.5f),   .color = InVertexColor, .uv0 = XMFLOAT2(0.f, 0.f) },
-        { .pos = XFP3(0.5f, -0.5f, 0.5f),   .color = InVertexColor, .uv0 = XMFLOAT2(1.f, 1.f) },
+        { .pos = XFP3(0.5f, -0.5f, 0.5f),   .color = InVertexColor, .uv0 = XMFLOAT2(1.f, 1.f), .textureIndex = InTextureIndex },
+        { .pos = XFP3(-0.5f, 0.5f, 0.5f),   .color = InVertexColor, .uv0 = XMFLOAT2(0.f, 0.f), .textureIndex = InTextureIndex },
+        { .pos = XFP3(-0.5f, -0.5f, 0.5f),  .color = InVertexColor, .uv0 = XMFLOAT2(0.f, 1.f), .textureIndex = InTextureIndex },
+        { .pos = XFP3(0.5f, 0.5f, 0.5f),    .color = InVertexColor, .uv0 = XMFLOAT2(1.f, 0.f), .textureIndex = InTextureIndex },
+        { .pos = XFP3(-0.5f, 0.5f, 0.5f),   .color = InVertexColor, .uv0 = XMFLOAT2(0.f, 0.f), .textureIndex = InTextureIndex },
+        { .pos = XFP3(0.5f, -0.5f, 0.5f),   .color = InVertexColor, .uv0 = XMFLOAT2(1.f, 1.f), .textureIndex = InTextureIndex },
             // Back face
-        { .pos = XFP3(-0.5f, 0.5f, -0.5f),  .color = InVertexColor, .uv0 = XMFLOAT2(1.f, 0.f) },
-        { .pos = XFP3(0.5f, -0.5f, -0.5f),  .color = InVertexColor, .uv0 = XMFLOAT2(0.f, 1.f) },
-        { .pos = XFP3(-0.5f, -0.5f, -0.5f), .color = InVertexColor, .uv0 = XMFLOAT2(1.f, 1.f) },
-        { .pos = XFP3(0.5f, 0.5f, -0.5f),   .color = InVertexColor, .uv0 = XMFLOAT2(0.f, 0.f) },
-        { .pos = XFP3(0.5f, -0.5f, -0.5f),  .color = InVertexColor, .uv0 = XMFLOAT2(0.f, 1.f) },
-        { .pos = XFP3(-0.5f, 0.5f, -0.5f),  .color = InVertexColor, .uv0 = XMFLOAT2(1.f, 0.f) },
+        { .pos = XFP3(-0.5f, 0.5f, -0.5f),  .color = InVertexColor, .uv0 = XMFLOAT2(1.f, 0.f), .textureIndex = InTextureIndex },
+        { .pos = XFP3(0.5f, -0.5f, -0.5f),  .color = InVertexColor, .uv0 = XMFLOAT2(0.f, 1.f), .textureIndex = InTextureIndex },
+        { .pos = XFP3(-0.5f, -0.5f, -0.5f), .color = InVertexColor, .uv0 = XMFLOAT2(1.f, 1.f), .textureIndex = InTextureIndex },
+        { .pos = XFP3(0.5f, 0.5f, -0.5f),   .color = InVertexColor, .uv0 = XMFLOAT2(0.f, 0.f), .textureIndex = InTextureIndex },
+        { .pos = XFP3(0.5f, -0.5f, -0.5f),  .color = InVertexColor, .uv0 = XMFLOAT2(0.f, 1.f), .textureIndex = InTextureIndex },
+        { .pos = XFP3(-0.5f, 0.5f, -0.5f),  .color = InVertexColor, .uv0 = XMFLOAT2(1.f, 0.f), .textureIndex = InTextureIndex },
             // Left face
-        { .pos = XFP3(-0.5f, -0.5f, 0.5f),  .color = InVertexColor, .uv0 = XMFLOAT2(1.f, 1.f) },
-        { .pos = XFP3(-0.5f, 0.5f, -0.5f),  .color = InVertexColor, .uv0 = XMFLOAT2(0.f, 0.f) },
-        { .pos = XFP3(-0.5f, -0.5f, -0.5f), .color = InVertexColor, .uv0 = XMFLOAT2(0.f, 1.f) },
-        { .pos = XFP3(-0.5f, 0.5f, 0.5f),   .color = InVertexColor, .uv0 = XMFLOAT2(1.f, 0.f) },
-        { .pos = XFP3(-0.5f, 0.5f, -0.5f),  .color = InVertexColor, .uv0 = XMFLOAT2(0.f, 0.f) },
-        { .pos = XFP3(-0.5f, -0.5f, 0.5f),  .color = InVertexColor, .uv0 = XMFLOAT2(1.f, 1.f) },
+        { .pos = XFP3(-0.5f, -0.5f, 0.5f),  .color = InVertexColor, .uv0 = XMFLOAT2(1.f, 1.f), .textureIndex = InTextureIndex },
+        { .pos = XFP3(-0.5f, 0.5f, -0.5f),  .color = InVertexColor, .uv0 = XMFLOAT2(0.f, 0.f), .textureIndex = InTextureIndex },
+        { .pos = XFP3(-0.5f, -0.5f, -0.5f), .color = InVertexColor, .uv0 = XMFLOAT2(0.f, 1.f), .textureIndex = InTextureIndex },
+        { .pos = XFP3(-0.5f, 0.5f, 0.5f),   .color = InVertexColor, .uv0 = XMFLOAT2(1.f, 0.f), .textureIndex = InTextureIndex },
+        { .pos = XFP3(-0.5f, 0.5f, -0.5f),  .color = InVertexColor, .uv0 = XMFLOAT2(0.f, 0.f), .textureIndex = InTextureIndex },
+        { .pos = XFP3(-0.5f, -0.5f, 0.5f),  .color = InVertexColor, .uv0 = XMFLOAT2(1.f, 1.f), .textureIndex = InTextureIndex },
             // Right face
-        { .pos = XFP3(0.5f, 0.5f, -0.5f),   .color = InVertexColor, .uv0 = XMFLOAT2(1.f, 0.f) },
-        { .pos = XFP3(0.5f, -0.5f, 0.5f),   .color = InVertexColor, .uv0 = XMFLOAT2(0.f, 1.f) },
-        { .pos = XFP3(0.5f, -0.5f, -0.5f),  .color = InVertexColor, .uv0 = XMFLOAT2(1.f, 1.f) },
-        { .pos = XFP3(0.5f, 0.5f, 0.5f),    .color = InVertexColor, .uv0 = XMFLOAT2(0.f, 0.f) },
-        { .pos = XFP3(0.5f, -0.5f, 0.5f),   .color = InVertexColor, .uv0 = XMFLOAT2(0.f, 1.f) },
-        { .pos = XFP3(0.5f, 0.5f, -0.5f),   .color = InVertexColor, .uv0 = XMFLOAT2(1.f, 0.f) },
+        { .pos = XFP3(0.5f, 0.5f, -0.5f),   .color = InVertexColor, .uv0 = XMFLOAT2(1.f, 0.f), .textureIndex = InTextureIndex },
+        { .pos = XFP3(0.5f, -0.5f, 0.5f),   .color = InVertexColor, .uv0 = XMFLOAT2(0.f, 1.f), .textureIndex = InTextureIndex },
+        { .pos = XFP3(0.5f, -0.5f, -0.5f),  .color = InVertexColor, .uv0 = XMFLOAT2(1.f, 1.f), .textureIndex = InTextureIndex },
+        { .pos = XFP3(0.5f, 0.5f, 0.5f),    .color = InVertexColor, .uv0 = XMFLOAT2(0.f, 0.f), .textureIndex = InTextureIndex },
+        { .pos = XFP3(0.5f, -0.5f, 0.5f),   .color = InVertexColor, .uv0 = XMFLOAT2(0.f, 1.f), .textureIndex = InTextureIndex },
+        { .pos = XFP3(0.5f, 0.5f, -0.5f),   .color = InVertexColor, .uv0 = XMFLOAT2(1.f, 0.f), .textureIndex = InTextureIndex },
             // Top face
-        { .pos = XFP3(-0.5f, 0.5f, 0.5f),   .color = InVertexColor, .uv0 = XMFLOAT2(0.f, 0.f) },
-        { .pos = XFP3(0.5f, 0.5f, -0.5f),   .color = InVertexColor, .uv0 = XMFLOAT2(1.f, 1.f) },
-        { .pos = XFP3(-0.5f, 0.5f, -0.5f),  .color = InVertexColor, .uv0 = XMFLOAT2(0.f, 1.f) },
-        { .pos = XFP3(0.5f, 0.5f, 0.5f),    .color = InVertexColor, .uv0 = XMFLOAT2(1.f, 0.f) },
-        { .pos = XFP3(0.5f, 0.5f, -0.5f),   .color = InVertexColor, .uv0 = XMFLOAT2(1.f, 1.f) },
-        { .pos = XFP3(-0.5f, 0.5f, 0.5f),   .color = InVertexColor, .uv0 = XMFLOAT2(0.f, 0.f) },
+        { .pos = XFP3(-0.5f, 0.5f, 0.5f),   .color = InVertexColor, .uv0 = XMFLOAT2(0.f, 0.f), .textureIndex = InTextureIndex },
+        { .pos = XFP3(0.5f, 0.5f, -0.5f),   .color = InVertexColor, .uv0 = XMFLOAT2(1.f, 1.f), .textureIndex = InTextureIndex },
+        { .pos = XFP3(-0.5f, 0.5f, -0.5f),  .color = InVertexColor, .uv0 = XMFLOAT2(0.f, 1.f), .textureIndex = InTextureIndex },
+        { .pos = XFP3(0.5f, 0.5f, 0.5f),    .color = InVertexColor, .uv0 = XMFLOAT2(1.f, 0.f), .textureIndex = InTextureIndex },
+        { .pos = XFP3(0.5f, 0.5f, -0.5f),   .color = InVertexColor, .uv0 = XMFLOAT2(1.f, 1.f), .textureIndex = InTextureIndex },
+        { .pos = XFP3(-0.5f, 0.5f, 0.5f),   .color = InVertexColor, .uv0 = XMFLOAT2(0.f, 0.f), .textureIndex = InTextureIndex },
             // Bottom face
-        { .pos = XFP3(0.5f, -0.5f, -0.5f),  .color = InVertexColor, .uv0 = XMFLOAT2(1.f, 0.f) },
-        { .pos = XFP3(-0.5f, -0.5f, 0.5f),  .color = InVertexColor, .uv0 = XMFLOAT2(0.f, 1.f) },
-        { .pos = XFP3(-0.5f, -0.5f, -0.5f), .color = InVertexColor, .uv0 = XMFLOAT2(0.f, 0.f) },
-        { .pos = XFP3(0.5f, -0.5f, 0.5f),   .color = InVertexColor, .uv0 = XMFLOAT2(1.f, 1.f) },
-        { .pos = XFP3(-0.5f, -0.5f, 0.5f),  .color = InVertexColor, .uv0 = XMFLOAT2(0.f, 1.f) },
-        { .pos = XFP3(0.5f, -0.5f, -0.5f),  .color = InVertexColor, .uv0 = XMFLOAT2(1.f, 0.f) }
+        { .pos = XFP3(0.5f, -0.5f, -0.5f),  .color = InVertexColor, .uv0 = XMFLOAT2(1.f, 0.f), .textureIndex = InTextureIndex },
+        { .pos = XFP3(-0.5f, -0.5f, 0.5f),  .color = InVertexColor, .uv0 = XMFLOAT2(0.f, 1.f), .textureIndex = InTextureIndex },
+        { .pos = XFP3(-0.5f, -0.5f, -0.5f), .color = InVertexColor, .uv0 = XMFLOAT2(0.f, 0.f), .textureIndex = InTextureIndex },
+        { .pos = XFP3(0.5f, -0.5f, 0.5f),   .color = InVertexColor, .uv0 = XMFLOAT2(1.f, 1.f), .textureIndex = InTextureIndex },
+        { .pos = XFP3(-0.5f, -0.5f, 0.5f),  .color = InVertexColor, .uv0 = XMFLOAT2(0.f, 1.f), .textureIndex = InTextureIndex },
+        { .pos = XFP3(0.5f, -0.5f, -0.5f),  .color = InVertexColor, .uv0 = XMFLOAT2(1.f, 0.f), .textureIndex = InTextureIndex }
     }
     //std::vector<unsigned short>{ //Triangle index
     //    0, 1, 2,
@@ -156,41 +156,55 @@ RSRSharedMesh3DPtr RSRBasicShapes::GetRegisterNewSquare(const std::string_view I
     );
 }
 
-RSRSharedMesh3DPtr RSRBasicShapes::GetRegisterNewPlane(const std::string_view InShapeName, const XMFLOAT3& InVertexColor, RSRAssetManager* InAssetManager)
+RSRSharedMesh3DPtr RSRBasicShapes::GetRegisterNewPlane(const std::string_view InShapeName, const XMFLOAT3& InVertexColor, uint32_t InTextureIndex, RSRAssetManager* InAssetManager)
+{
+    return GetRegisterNewPlane(InShapeName, InVertexColor, InTextureIndex, XMFLOAT2{ 0.f, 0.f }, XMFLOAT2{ 1.f, 1.f }, InAssetManager);
+}
+
+RSRush::RSRSharedMesh3DPtr RSRush::RSRBasicShapes::GetRegisterNewPlane(const std::string_view InShapeName, const DirectX::XMFLOAT3& InVertexColor, uint32_t InTextureIndex, const DirectX::XMFLOAT2& InUVScale, RSRAssetManager* InAssetManager)
+{
+     return GetRegisterNewPlane(InShapeName, InVertexColor, InTextureIndex, XMFLOAT2{ 0.f, 0.f }, InUVScale, InAssetManager);
+}
+
+RSRush::RSRSharedMesh3DPtr RSRush::RSRBasicShapes::GetRegisterNewPlane(const std::string_view InShapeName, const DirectX::XMFLOAT3& InVertexColor, uint32_t InTextureIndex, const DirectX::XMFLOAT2& InMinUV, const DirectX::XMFLOAT2& InMaxUV, RSRAssetManager* InAssetManager)
 {
     return RSRAssetManager::Get().AddAsset<RSRMesh3D>
         (
             mds::NameDynamicAsset(mds::RAssetType::Mesh, InShapeName),
             false,
             std::vector<VertexPositionUVColor>
-            {
-                //First triangle
-                {
-                    .pos = XMFLOAT3(-0.5f, -0.5f, 0.f),
-                        .color = InVertexColor,
-                        .uv0 = XMFLOAT2(0.f, 1.f)
-                },
+    {
+        //First triangle
+        {
+            .pos = XMFLOAT3(-0.5f, -0.5f, 0.f),
+                .color = InVertexColor,
+                .uv0 = XMFLOAT2(InMinUV.x, InMaxUV.y),
+                .textureIndex = InTextureIndex
+        },
                 {
                     .pos = XMFLOAT3(0.5f, -0.5f, 0.f),
                     .color = InVertexColor,
-                    .uv0 = XMFLOAT2(1.f, 1.f)
+                    .uv0 = XMFLOAT2(InMaxUV.x, InMaxUV.y),
+                    .textureIndex = InTextureIndex
                 },
                 {
                     .pos = XMFLOAT3(-0.5f, 0.5f, 0.f),
                     .color = InVertexColor,
-                    .uv0 = XMFLOAT2(0.f, 0.f)
+                    .uv0 = XMFLOAT2(InMinUV.x, InMinUV.y),
+                    .textureIndex = InTextureIndex
                 },
-                //Second triangle
+            //Second triangle
                 {
                     .pos = XMFLOAT3(0.5f, 0.5f, 0.f),
                     .color = InVertexColor,
-                    .uv0 = XMFLOAT2(1.f, 0.f)
+                    .uv0 = XMFLOAT2(InMaxUV.x, InMinUV.y),
+                    .textureIndex = InTextureIndex
                 }
-            },
+    },
             std::vector<unsigned short>{
-                0, 2, 1,
-                1, 2, 3
-            }
+        0, 2, 1,
+            1, 2, 3
+    }
         );
 }
 

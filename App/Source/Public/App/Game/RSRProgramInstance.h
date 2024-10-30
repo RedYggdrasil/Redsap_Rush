@@ -11,6 +11,7 @@
 #include <unordered_set>
 #include "MDS/Tools/REnum.h"
 #include "MDS/Tools/RCollection.h"
+
 #include <wrl/client.h>
 #include <limits>
 
@@ -36,6 +37,7 @@ namespace RSRush
 		bool bTearingSupported = false;
 	};
 	class RSRRandomizer;
+	class RSRPipelines;
 	class RSRProgramInstance : public mds::Singleton<RSRProgramInstance>
 	{
 	protected:
@@ -67,30 +69,24 @@ namespace RSRush
 	protected:
 		bool m_bIsInitialized;
 
-		mds::RUnorderedStringMap<std::unique_ptr<Shader>> m_shaders;
-
 		std::unordered_set<std::shared_ptr<RSRScene>> m_scenes;
 		std::shared_ptr<RSRScene> m_currentScene;
 
 		std::unique_ptr<RSRush::RSRRandomizer> m_randomizer;
+		std::unique_ptr<RSRush::RSRPipelines> m_pipelines;
 
 #pragma region PSOs
-		Microsoft::WRL::ComPtr<ID3D12RootSignature> m_rootSignature2D;
-		Microsoft::WRL::ComPtr<ID3D12PipelineState> m_pso2D;
-		Microsoft::WRL::ComPtr<ID3D12RootSignature> m_rootSignature3D;
-		Microsoft::WRL::ComPtr<ID3D12PipelineState> m_pso3D;
 		public:
-		Microsoft::WRL::ComPtr<ID3D12RootSignature> GetRootSig2D() const { return m_rootSignature2D;}
-		Microsoft::WRL::ComPtr<ID3D12PipelineState> GetPSO2D() const { return m_pso2D;}
-		Microsoft::WRL::ComPtr<ID3D12RootSignature> GetRootSig3D() const { return m_rootSignature3D;}
-		Microsoft::WRL::ComPtr<ID3D12PipelineState> GetPSO3D() const { return m_pso3D;}
+		Microsoft::WRL::ComPtr<ID3D12RootSignature> GetRootSig2D() const;
+		Microsoft::WRL::ComPtr<ID3D12PipelineState> GetPSO2D() const;
+		Microsoft::WRL::ComPtr<ID3D12RootSignature> GetRootSig3D() const;
+		Microsoft::WRL::ComPtr<ID3D12PipelineState> GetPSO3D() const;
+		Microsoft::WRL::ComPtr<ID3D12RootSignature> GetRootSig3DInstanced() const;
+		Microsoft::WRL::ComPtr<ID3D12PipelineState> GetPSO3DInstanced() const;
 #if DEBUG_PHYSIC
-	protected:
-		Microsoft::WRL::ComPtr<ID3D12RootSignature> m_rootSignatureDebugPhysic;
-		Microsoft::WRL::ComPtr<ID3D12PipelineState> m_psoDebugPhysic;
 	public:
-		Microsoft::WRL::ComPtr<ID3D12RootSignature> GetRootSigDebugPhysic() const { return m_rootSignatureDebugPhysic; }
-		Microsoft::WRL::ComPtr<ID3D12PipelineState> GetPSODebugPhysic() const { return m_psoDebugPhysic; }
+		Microsoft::WRL::ComPtr<ID3D12RootSignature> GetRootSigDebugPhysic() const;
+		Microsoft::WRL::ComPtr<ID3D12PipelineState> GetPSODebugPhysic() const;
 #endif
 #pragma endregion PSOs
 

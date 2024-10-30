@@ -280,11 +280,11 @@ bool RSRPhysicManager::Init(RSRBasicShapes* InBasicShapes)
 	bool allSucessfull = true;
 #if DEBUG_PHYSIC
 	if (!InBasicShapes) { return false; }
-	m_debugSquare = InBasicShapes->GetRegisterNewSquare(RSRPhysicManager::DEBUG_SQUARE_NAME, { 1.f, 0.f, 0.f }, nullptr);
+	m_debugSquare = InBasicShapes->GetRegisterNewSquare(RSRPhysicManager::DEBUG_SQUARE_NAME, { 1.f, 0.f, 0.f }, 0Ui32, nullptr);
 	//TODO : create a function for default spheres
 	m_debugSphere = InBasicShapes->GetRegisterNewSphere(RSRPhysicManager::DEBUG_SPHERE_NAME, { 1.f, 0.f, 0.f }, 0Ui32, nullptr);
 
-	m_debugAABB = InBasicShapes->GetRegisterNewSquare(RSRPhysicManager::DEBUG_AABB_NAME, { 0.f, 1.f, 0.f }, nullptr);
+	m_debugAABB = InBasicShapes->GetRegisterNewSquare(RSRPhysicManager::DEBUG_AABB_NAME, { 0.f, 1.f, 0.f }, 0Ui32, nullptr);
 	allSucessfull = m_debugSquare && m_debugSphere && m_debugSquare && allSucessfull;
 #endif
 	return allSucessfull;

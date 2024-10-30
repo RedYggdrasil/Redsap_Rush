@@ -40,8 +40,10 @@ public:
 		const RSRush::RSRSharedMesh2DPtr& GetDefPlane2D() const { return m_defaultPlane2D; };
 		const RSRush::RSRSharedMesh2DPtr& GetDefTriangle2D() const { return m_defaultTriangle2D; };
 	public:
-	RSRush::RSRSharedMesh3DPtr GetRegisterNewSquare(const std::string_view InShapeName, const DirectX::XMFLOAT3& InVertexColor, RSRAssetManager* InAssetManager = nullptr);
-	RSRush::RSRSharedMesh3DPtr GetRegisterNewPlane(const std::string_view InShapeName, const DirectX::XMFLOAT3& InVertexColor, RSRAssetManager* InAssetManager = nullptr);
+	RSRush::RSRSharedMesh3DPtr GetRegisterNewSquare(const std::string_view InShapeName, const DirectX::XMFLOAT3& InVertexColor, uint32_t InTextureIndex, RSRAssetManager* InAssetManager = nullptr);
+	RSRush::RSRSharedMesh3DPtr GetRegisterNewPlane(const std::string_view InShapeName, const DirectX::XMFLOAT3& InVertexColor, uint32_t InTextureIndex, RSRAssetManager* InAssetManager = nullptr);
+	RSRush::RSRSharedMesh3DPtr GetRegisterNewPlane(const std::string_view InShapeName, const DirectX::XMFLOAT3& InVertexColor, uint32_t InTextureIndex, const DirectX::XMFLOAT2& InUVScale, RSRAssetManager* InAssetManager = nullptr);
+	RSRush::RSRSharedMesh3DPtr GetRegisterNewPlane(const std::string_view InShapeName, const DirectX::XMFLOAT3& InVertexColor, uint32_t InTextureIndex, const DirectX::XMFLOAT2& InMinUV, const DirectX::XMFLOAT2& InMaxUV, RSRAssetManager* InAssetManager = nullptr);
 
 	RSRush::RSRSharedMesh2DPtr GetRegisterNewPlane2D(const std::string_view InShapeName, const DirectX::XMFLOAT4& InVertexColor, const DirectX::XMFLOAT2& Pivot = { 0.f, 0.f }, const DirectX::XMFLOAT2& InTopLeft = { -1.f, -1.f }, const DirectX::XMFLOAT2& InBottomRight = { 1.f, 1.f }, uint32_t InTextureIndex = 0, RSRAssetManager* InAssetManager = nullptr);
 	RSRush::RSRSharedMesh2DPtr GetRegisterNewTriangle2D(const std::string_view InShapeName, const DirectX::XMFLOAT4& InVertexColor, const DirectX::XMFLOAT2& Pivot = { 0.f, 0.f }, const DirectX::XMFLOAT2& InTopLeft = { -1.f, -1.f }, const DirectX::XMFLOAT2& InBottomRight = { 1.f, 1.f }, uint32_t InTextureIndex = 0, RSRAssetManager* InAssetManager = nullptr);

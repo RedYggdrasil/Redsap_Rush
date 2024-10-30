@@ -66,8 +66,8 @@ namespace RSRush
 	public:
 		virtual bool UploadResources(ID3D12Device10* InDevice, ID3D12GraphicsCommandList7* InUploadCommandList);
 	public:
-		bool DrawMesh(ID3D12GraphicsCommandList7* InUploadCommandList) const;
-		bool DrawMesh(ID3D12GraphicsCommandList7* InUploadCommandList, const RSRTransformMatrix& InPinnedTransformMatrix) const;
+		bool DrawMesh(ID3D12GraphicsCommandList7* InUploadCommandList, const UINT InInstanceCount = 1) const;
+		bool DrawMesh(ID3D12GraphicsCommandList7* InUploadCommandList, const RSRTransformMatrix& InPinnedTransformMatrix, const UINT InInstanceCount = 1) const;
 	};
 #undef l_ComPtr
 }

@@ -25,7 +25,8 @@ namespace RSRush
 
 	public:
 		inline const RSRush::RSRCameraData* GetCameraData() const { return m_pawn ? m_pawn->GetCameraData() : nullptr; };
-		inline RSRush::RSRCameraData* GetCameraData() { return m_pawn ? m_pawn->GetCameraData() : nullptr; };
+		inline RSRush::RSRCameraData* GetCameraData() 
+		{ return m_pawn ? m_pawn->GetCameraData() : nullptr; };
 
 		PlayerController();
 		virtual ~PlayerController();

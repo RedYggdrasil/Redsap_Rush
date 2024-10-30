@@ -33,7 +33,7 @@ void RSRTTGameManager::InitializeGame(std::weak_ptr<RSRScene> InScene)
 	GetTTPlayerController()->PocessPawn(tTScene->GetPlayerPawn().get());
 
 	//Generate first Trench mesh
-	RSRush::RSRTrenchManager::Get().BeginNewTrench(0.0, m_playerPath);
+	tTScene->GetTrenchManager()->BeginNewTrench(0.0, m_playerPath);
 }
 
 void RSRTTGameManager::ShutdownGame()

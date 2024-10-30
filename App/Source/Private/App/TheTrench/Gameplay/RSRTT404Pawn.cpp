@@ -398,7 +398,7 @@ void RSRTT404Pawn::GenerateMesh()
 		std::string lifepointOffName = std::format(TEXT("RSRTT404Pawn_LifepointOff_{}"), i);
 		static constexpr float upperMargin = 0.02f;
 		static constexpr float leftMargin = 0.02f;
-		static constexpr float UISize = 0.1f;
+		static constexpr float UISize = 0.2f;
 		static constexpr float UIWidth = UISize;
 		static constexpr float UIWidthMargin = 0.05f;
 		static constexpr float UIHeight = UISize;

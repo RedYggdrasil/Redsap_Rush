@@ -37,9 +37,25 @@ bool RSRVoxelRectangularObstacle::AttemptPlacement(std::mt19937_64& InOutGenerat
 
 	bool bSucessfullyPlaced = false;
 	RSRVoxelRectangle VoxelPlacement;
+
+	std::uniform_int_distribution<int32_t> distType(0, 1);
+
 	for (uint8_t nbAttempt = 0; nbAttempt < InMaxAttemptCount; ++nbAttempt)
 	{
-		bSucessfullyPlaced = AttemptHorizontalBarrierPacement(InOutGenerator, InSpawnArea, /*Out*/ VoxelPlacement);
+		switch (distType(InOutGenerator))
+		{
+		case 0 :
+			bSucessfullyPlaced = AttemptHorizontalBarrierPacement(InOutGenerator, InSpawnArea, /*Out*/ VoxelPlacement);
+			break;
+		case 1 :
+			bSucessfullyPlaced = AttemptVerticalSpirePacement(InOutGenerator, InSpawnArea, /*Out*/ VoxelPlacement);
+			break;
+		default:
+			RSRLog::Log(LOG_ERROR, TEXT("Out of bounds result for RectangularObstacle in 'RSRVoxelRectangularObstacle::AttemptPlacement' !"));
+			bSucessfullyPlaced = false;
+			break;
+		}
+
 		if (bSucessfullyPlaced)
 		{
 			//Handle sucess
@@ -109,6 +125,9 @@ static constexpr int32_t RO_MAX_HEIGHT_VXL = 10;
 static constexpr int32_t RO_MIN_DEPTH_VXL = 1;
 static constexpr int32_t RO_MAX_DEPTH_VXL = 10;
 
+static constexpr int32_t RO_MIN_WIDTH_VXL = 1;
+static constexpr int32_t RO_MAX_WIDTH_VXL = 10;
+
 bool RSRVoxelRectangularObstacle::AttemptHorizontalBarrierPacement(std::mt19937_64& InOutGenerator, const RSRVoxelRectangle& InSpawnArea, RSRVoxelRectangle& OutResultingObstacle)
 {
 
@@ -162,5 +181,67 @@ bool RSRVoxelRectangularObstacle::AttemptHorizontalBarrierPacement(std::mt19937_
 	}
 
 	
+	return true;
+}
+
+bool RSRush::RSRVoxelRectangularObstacle::AttemptVerticalSpirePacement(std::mt19937_64& InOutGenerator, const RSRVoxelRectangle& InSpawnArea, RSRVoxelRectangle& OutResultingObstacle)
+{
+	if (InSpawnArea.Max.x - RO_MIN_DEPTH_VXL < InSpawnArea.Min.x)
+	{
+		RETURN_FALSE_LOGIF(RSRLog::Log(LOG_DISPLAY, TEXT("Not enought depth to spawn a RSRVoxelRectangularObstacle")));
+	}
+	if (InSpawnArea.Max.z - RO_MIN_HEIGHT_VXL < InSpawnArea.Min.z)
+	{
+		RETURN_FALSE_LOGIF(RSRLog::Log(LOG_DISPLAY, TEXT("Not enought height to spawn a RSRVoxelRectangularObstacle")));
+	}
+
+
+	OutResultingObstacle =
+	{
+		.Min = XMINT3
+		{
+			/*X*/0, //Variable
+			/*Y*/0, //Variable
+			/*Z*/InSpawnArea.Min.z 
+		},
+		.Max = XMINT3
+		{
+			/*X*/0, //Variable
+			/*Y*/0, //Variable
+			/*Z*/0 //Variable
+		}
+	};
+	//X (Depth)
+
+	std::uniform_int_distribution<int32_t> distStartDepth(InSpawnArea.Min.x, InSpawnArea.Max.x - RO_MIN_DEPTH_VXL);
+	OutResultingObstacle.Min.x = distStartDepth(InOutGenerator);
+	std::uniform_int_distribution<int32_t> distEndDepth(OutResultingObstacle.Min.x + RO_MIN_DEPTH_VXL, InSpawnArea.Max.x);
+	OutResultingObstacle.Max.x = distEndDepth(InOutGenerator);
+
+
+	//Y (Side)
+
+	std::uniform_int_distribution<int32_t> distStartWidth(InSpawnArea.Min.y, InSpawnArea.Max.y - RO_MIN_WIDTH_VXL);
+	OutResultingObstacle.Min.y = distStartWidth(InOutGenerator);
+	std::uniform_int_distribution<int32_t> distEndWidth(OutResultingObstacle.Min.y + RO_MIN_WIDTH_VXL, InSpawnArea.Max.y);
+	OutResultingObstacle.Max.y = distEndWidth(InOutGenerator);
+
+	//Z (Height)
+
+	OutResultingObstacle.Min.z = InSpawnArea.Min.z;
+	std::uniform_int_distribution<int32_t> distHigh(OutResultingObstacle.Min.z + RO_MIN_HEIGHT_VXL, InSpawnArea.Max.z);
+	OutResultingObstacle.Max.z = distHigh(InOutGenerator);
+
+
+	if (!RSRVoxalGrid::IsFree(m_apd.p_VoxalGrid->GetObstructerState(OutResultingObstacle)))
+	{
+		RETURN_FALSE_LOGIF(RSRLog::Log(LOG_DISPLAY, TEXT("Genereted space is voxel occupied")));
+	};
+	if (!AvalableVoxelSpace(OutResultingObstacle))
+	{
+		RETURN_FALSE_LOGIF(RSRLog::Log(LOG_DISPLAY, TEXT("Physically obstructed space")));
+	}
+
+
 	return true;
 }
