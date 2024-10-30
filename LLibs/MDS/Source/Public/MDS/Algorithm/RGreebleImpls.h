@@ -13,7 +13,13 @@ namespace mds
 	namespace NSRGreeble
 	{
 		RGREEBLE_TEMPLATE
-		void RGREEBLE::Generate(std::mt19937_64&& InGenerator, RVoxelSurface&& InPlane, const DirectX::XMFLOAT4X4& InPlaneToModelSpace, const DirectX::XMFLOAT3& InPlaneExtrusionDir, const bool bInFaceClockwise, std::vector<TVertex>& InOutVertices, std::vector<TUintVertIdx>& InOutTirangles)
+		void RGREEBLE::Generate
+		(
+			std::mt19937_64&& InGenerator, RVoxelSurface&& InPlane, const DirectX::XMFLOAT4X4& InPlaneToModelSpace, 
+			const DirectX::XMFLOAT3& InPlaneExtrusionDir, const bool bInFaceClockwise,
+			const std::vector<uint16_t>& InSideGreedbleTextureIDs, const std::vector<uint16_t>& InTopGreedbleTextureIDs,
+			std::vector<TVertex>& InOutVertices, std::vector<TUintVertIdx>& InOutTirangles
+		)
 		{
 
 			DirectX::XMFLOAT4X4 TransposeMatrix = mds::RMath::ExtractTranspostionMatrix(InPlaneToModelSpace);
@@ -40,17 +46,23 @@ namespace mds
 
 			mp_context = std::make_unique<RGContext>
 				(
-					RGContext{
-					.Gen = std::move(InGenerator),
-					.Vertexes = InOutVertices,
-					.Triangles = InOutTirangles,
-					.DefaultTranspose = TransposeMatrix,
-					.bFaceClockwise = bInFaceClockwise,
-					.DefaultScale = TranspositionScale,
-					.DefaultTranslate = TranslationVector,
-					.DepthAxis = depthVector,
-					.MemoryTreeRoot = std::make_shared<RGMemoryTree>()
-					});
+					RGContext
+					{
+						.Gen = std::move(InGenerator),
+						.Vertexes = InOutVertices,
+						.Triangles = InOutTirangles,
+						.DefaultTranspose = TransposeMatrix,
+						.bFaceClockwise = bInFaceClockwise,
+						.DefaultScale = TranspositionScale,
+						.DefaultTranslate = TranslationVector,
+						.DepthAxis = depthVector,
+						.MemoryTreeRoot = std::make_shared<RGMemoryTree>(),
+						.SideGreedbleTextureIDs	= std::vector<uint16_t>(InSideGreedbleTextureIDs),
+						.TopGreedbleTextureIDs	= std::vector<uint16_t>(InTopGreedbleTextureIDs),
+						.Dist_SideGreedbleTextureIDs	= std::uniform_int_distribution<uint16_t>(0, (uint16_t)(std::max((size_t)InSideGreedbleTextureIDs.size() , (size_t)1) - 1)),
+						.Dist_TopGreedbleTextureIDs		= std::uniform_int_distribution<uint16_t>(0, (uint16_t)(std::max((size_t)InTopGreedbleTextureIDs.size()  , (size_t)1) - 1))
+					}
+				);
 
 			mp_context->MemoryTreeRoot->ParentElement.reset(); //explicit parent null for root
 			mp_context->MemoryTreeRoot->ParentCoordVoxelSurface = RVoxelSurface();
@@ -113,7 +125,7 @@ namespace mds
 			/*starting at 8 a tiledshape can have holes*/
 			std::uniform_int_distribution<uint16_t> nbTilesDistribution(1, 6);
 			static std::uniform_int_distribution<uint16_t> nbTilesDir4Distribution(0, _countof(mds::DIRECTIONS2D_4) - 1);
-			std::uniform_real_distribution<float> extrusionHeightDist(0.05f, 0.40f);
+			std::uniform_real_distribution<float> extrusionHeightDist(0.15f, 1.0f);
 			std::uniform_int_distribution<int32_t> tileDefRatioDist(2, 2);
 
 			int32_t MAX_CHILD = 9999999;
@@ -552,7 +564,6 @@ namespace mds
 			std::vector<TVertex>& Verts = mp_context->Vertexes;
 			std::vector<TUintVertIdx>& Tris = mp_context->Triangles;
 
-
 			RGContourData& cPC_CD = cSD.ParentContourData;
 			RGContourData& cSC_CD = cSD.ChildContourData;
 
@@ -562,7 +573,7 @@ namespace mds
 			Verts.reserve(Verts.size() + (cLines.size() * 4));
 			Tris.reserve(Tris.size() + (cLines.size() * 6));
 
-			auto HandleVertice = [this, &Verts, &Tris](XMMATRIX* vrtxToMsh, const XMINT2 InCoord2D, const XMFLOAT2 InNormal2D, TUintVertIdx& OutVerticeID) ->void
+			auto HandleVertice = [this, &Verts, &Tris](XMMATRIX* vrtxToMsh, const XMINT2 InCoord2D, const XMFLOAT2 InNormal2D, const uint16_t InTextureID, TUintVertIdx& OutVerticeID) ->void
 			{
 				OutVerticeID = (TUintVertIdx)Verts.size();
 
@@ -576,37 +587,47 @@ namespace mds
 				(
 					m_vertexProvider.SurfaceNormal,
 					verticePos,
-					InNormal2D
+					InNormal2D,
+					InTextureID
 				));
 			};
-			for (size_t i = 0; i < cLines.size(); ++i)
 			{
-				const RGLineData& pLineData = pLines[i];
-				const RGLineData& cLineData = cLines[i];
-				constexpr XMFLOAT2 startPLineUV = XMFLOAT2{ 0.f, 0.f };
-				constexpr XMFLOAT2 endPLineUV	= XMFLOAT2{ 1.f, 0.f };
-				constexpr XMFLOAT2 startCLineUV = XMFLOAT2{ 0.f, 1.f };
-				constexpr XMFLOAT2 endCLineUV	= XMFLOAT2{ 1.f, 1.f };
+				std::mt19937_64& gen = mp_context->Gen;
+				auto& distSideTextureID = mp_context->Dist_SideGreedbleTextureIDs;
+				const std::vector<uint16_t>& sideGreedbleTextureIDs = mp_context->SideGreedbleTextureIDs;
 
-				TUintVertIdx pMin, pMax, cMin, cMax;
+				for (size_t i = 0; i < cLines.size(); ++i)
+				{
+					const RGLineData& pLineData = pLines[i];
+					const RGLineData& cLineData = cLines[i];
+					
+					constexpr XMFLOAT2 startPLineUV = XMFLOAT2{ 0.f, 1.f };
+					constexpr XMFLOAT2 endPLineUV = XMFLOAT2{ 1.f, 1.f };
+					constexpr XMFLOAT2 startCLineUV = XMFLOAT2{ 0.f, 0.f };
+					constexpr XMFLOAT2 endCLineUV = XMFLOAT2{ 1.f, 0.f };
 
-				HandleVertice(&pVrtxToMsh, pLineData.StartCoord	, startPLineUV	, pMin);
-				HandleVertice(&pVrtxToMsh, pLineData.EndCoord	, endPLineUV	, pMax);
+					const uint16_t textureIndex = sideGreedbleTextureIDs[distSideTextureID(gen)];
 
-				HandleVertice(&cVrtxToMsh, cLineData.StartCoord	, startCLineUV	, cMin);
-				HandleVertice(&cVrtxToMsh, cLineData.EndCoord	, endCLineUV	, cMax);
+					TUintVertIdx pMin, pMax, cMin, cMax;
 
-				size_t startTriIdx = Tris.size();
-				Tris.resize(startTriIdx + 6);
+					HandleVertice(&pVrtxToMsh, pLineData.StartCoord, startPLineUV, textureIndex, /*Out*/pMin);
+					HandleVertice(&pVrtxToMsh, pLineData.EndCoord, endPLineUV, textureIndex, /*Out*/pMax);
 
-				bool revrs = !mp_context->bFaceClockwise;
-				Tris[startTriIdx + (revrs ? 2 : 0)] = pMax;
-				Tris[startTriIdx + 1] = cMax;
-				Tris[startTriIdx + (revrs ? 0 : 2)] = pMin;
+					HandleVertice(&cVrtxToMsh, cLineData.StartCoord, startCLineUV, textureIndex, /*Out*/cMin);
+					HandleVertice(&cVrtxToMsh, cLineData.EndCoord, endCLineUV, textureIndex, /*Out*/cMax);
 
-				Tris[startTriIdx + (revrs ? 5 : 3)] = cMax;
-				Tris[startTriIdx + 4] = cMin;
-				Tris[startTriIdx + (revrs ? 3 : 5)] = pMin;
+					size_t startTriIdx = Tris.size();
+					Tris.resize(startTriIdx + 6);
+
+					bool revrs = !mp_context->bFaceClockwise;
+					Tris[startTriIdx + (revrs ? 2 : 0)] = pMax;
+					Tris[startTriIdx + 1] = cMax;
+					Tris[startTriIdx + (revrs ? 0 : 2)] = pMin;
+
+					Tris[startTriIdx + (revrs ? 5 : 3)] = cMax;
+					Tris[startTriIdx + 4] = cMin;
+					Tris[startTriIdx + (revrs ? 3 : 5)] = pMin;
+				}
 			}
 		};
 
@@ -650,16 +671,33 @@ namespace mds
 			Verts.reserve(Verts.size() + (cQuads * 4));
 			Tris.reserve(Tris.size() + (cQuads * 6));
 
-			auto HandleVertice = [this, &Verts, &Tris, &coordToVerticeIdx, &voxelSurface, &vrtxToMsh, &minPlane, &sizePlane/*, &normalizer, &DEFAULT_COLOR, &UseTextureIndex*/](const XMINT2 InCoord2D, TUintVertIdx& OutVerticeID) ->void
+			auto HandleVertice = [this, &Verts, &Tris, &coordToVerticeIdx, &voxelSurface, &vrtxToMsh, &minPlane, &sizePlane/*, &normalizer, &DEFAULT_COLOR, &UseTextureIndex*/]
+				(const XMINT2 InQuadSize, const XMINT2 InQuadMin, const XMINT2 InCoord2D, const uint16_t InTextureID, TUintVertIdx& OutVerticeID) ->void
 				{
-					auto NormalizeCoord = [&minPlane, &sizePlane](const XMINT2& InCoord) -> XMFLOAT2
+					auto NormalizeCoord = [&minPlane, &sizePlane, &InQuadSize, &InQuadMin](const XMINT2& InCoord) -> XMFLOAT2
 						{
-							XMVECTOR LoadedCoord = DirectX::XMVectorSet((float)InCoord.x, (float)InCoord.y, 0.f, 0.f);
 							XMFLOAT2 result;
-							XMStoreFloat2(&result, (LoadedCoord - minPlane) / sizePlane);
+							constexpr bool bUsePlaneUV = false;
+							XMVECTOR LoadedCoord = DirectX::XMVectorSet((float)InCoord.x, (float)InCoord.y, 0.f, 0.f);
+
+							if (bUsePlaneUV)
+							{
+								XMStoreFloat2(&result, (LoadedCoord - minPlane) / sizePlane);
+							}
+							else
+							{
+								XMVECTOR LoadedQuadSize = DirectX::XMVectorSet((float)InQuadSize.x, (float)InQuadSize.y, 0.f, 0.f);
+								XMVECTOR LoadedQuadMin = DirectX::XMVectorSet((float)InQuadMin.x, (float)InQuadMin.y, 0.f, 0.f);
+								XMVECTOR resultingUVs = LoadedCoord - LoadedQuadMin;
+								resultingUVs = resultingUVs * 0.25f;// -> This use voxel size (so no streatching), multiply to uniformly scale texture
+								//resultingUVs = resultingUVs / LoadedQuadSize;// -> This map to UV [0 - 1] on all axis
+								XMStoreFloat2(&result, resultingUVs);
+							}
+
 							return result;
 						};
-					if (coordToVerticeIdx.contains(InCoord2D)) { OutVerticeID = coordToVerticeIdx[InCoord2D]; }
+					//UV can be different to previous coord vertice
+					if (false && coordToVerticeIdx.contains(InCoord2D)) { OutVerticeID = coordToVerticeIdx[InCoord2D]; }
 					else
 					{
 						OutVerticeID = (TUintVertIdx)Verts.size();
@@ -677,36 +715,45 @@ namespace mds
 						(
 							m_vertexProvider.SurfaceNormal,
 							verticePos,
-							NormalizeCoord(InCoord2D)
+							NormalizeCoord(InCoord2D),
+							InTextureID
 						));
 					}
 				};
 
-			for (const RGreedyMesh::XMQuads& quad : quads)
 			{
+				std::mt19937_64& gen = mp_context->Gen;
+				auto& distTopTextureID = mp_context->Dist_TopGreedbleTextureIDs;
+				const std::vector<uint16_t>& topGreedbleTextureIDs = mp_context->TopGreedbleTextureIDs;
+				for (const RGreedyMesh::XMQuads& quad : quads)
+				{
 
-				TUintVertIdx minXminY, maxXminY, minXmaxY, maxXmaxY;
+					TUintVertIdx minXminY, maxXminY, minXmaxY, maxXmaxY;
 
-				XMINT2 q_minXminY = quad.Min;
-				XMINT2 q_maxXminY = { quad.Min.x + quad.SizeXY.x,		quad.Min.y };
-				XMINT2 q_minXmaxY = { quad.Min.x,						quad.Min.y + quad.SizeXY.y };
-				XMINT2 q_maxXmaxY = { quad.Min.x + quad.SizeXY.x,		quad.Min.y + quad.SizeXY.y };
-				HandleVertice(q_minXminY, /*Out*/minXminY);
-				HandleVertice(q_maxXminY, /*Out*/maxXminY);
-				HandleVertice(q_minXmaxY, /*Out*/minXmaxY);
-				HandleVertice(q_maxXmaxY, /*Out*/maxXmaxY);
+					constexpr bool bUsePlaneUV = true;
+					XMINT2 q_minXminY = quad.Min;
+					XMINT2 q_maxXminY = { quad.Min.x + quad.SizeXY.x,		quad.Min.y };
+					XMINT2 q_minXmaxY = { quad.Min.x,						quad.Min.y + quad.SizeXY.y };
+					XMINT2 q_maxXmaxY = { quad.Min.x + quad.SizeXY.x,		quad.Min.y + quad.SizeXY.y };
+					const uint16_t topTextureID = topGreedbleTextureIDs[distTopTextureID(gen)];
 
-				size_t startTriIdx = Tris.size();
-				Tris.resize(startTriIdx + 6);
+					HandleVertice(quad.SizeXY, quad.Min, q_minXminY, topTextureID, /*Out*/minXminY);
+					HandleVertice(quad.SizeXY, quad.Min, q_maxXminY, topTextureID, /*Out*/maxXminY);
+					HandleVertice(quad.SizeXY, quad.Min, q_minXmaxY, topTextureID, /*Out*/minXmaxY);
+					HandleVertice(quad.SizeXY, quad.Min, q_maxXmaxY, topTextureID, /*Out*/maxXmaxY);
 
-				bool revrs = !mp_context->bFaceClockwise;
-				Tris[startTriIdx + (revrs ? 2 : 0)] = minXminY;
-				Tris[startTriIdx + 1] = maxXminY;
-				Tris[startTriIdx + (revrs ? 0 : 2)] = minXmaxY;
+					size_t startTriIdx = Tris.size();
+					Tris.resize(startTriIdx + 6);
 
-				Tris[startTriIdx + (revrs ? 5 : 3)] = minXmaxY;
-				Tris[startTriIdx + 4] = maxXminY;
-				Tris[startTriIdx + (revrs ? 3 : 5)] = maxXmaxY;
+					bool revrs = !mp_context->bFaceClockwise;
+					Tris[startTriIdx + (revrs ? 2 : 0)] = minXminY;
+					Tris[startTriIdx + 1] = maxXminY;
+					Tris[startTriIdx + (revrs ? 0 : 2)] = minXmaxY;
+
+					Tris[startTriIdx + (revrs ? 5 : 3)] = minXmaxY;
+					Tris[startTriIdx + 4] = maxXminY;
+					Tris[startTriIdx + (revrs ? 3 : 5)] = maxXmaxY;
+				}
 			}
 		}
 	};

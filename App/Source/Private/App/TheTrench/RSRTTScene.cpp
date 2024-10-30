@@ -11,28 +11,61 @@
 #include "App/D3D/DXContext.h"
 #include "App/Managers/RSRAssetManager.h"
 #include "App/Managers/RSRTrenchManager.h"
+
+#include "App/Data/Trench/RSRTrench.h"
 #include <App/Data/Textures/RSRTexture2D.h>
+#include "App/GPUCompute/Texture/RSRComputeUVTexture.h"
+#include "App/GPUCompute/Texture/RSRComputeGreebleTexture.h"
 #include "App/Tools/Window.h"
+#include "App/TheTrench/RSRODrawableLightSource.h"
+#include "App/TheTrench/RSRODrawableBackground.h"
 #include <Tracy.hpp>
 
 using namespace RSRush;
 
+constexpr uint16_t FIRST_TRECH_TOP_GREEBLE_TEXTURE_ID = 3;
+constexpr uint16_t TRENCH_TOP_GREEBLE_TEXTURE_NUMBER = 3;
+
+constexpr uint16_t FIRST_TRECH_SIDE_GREEBLE_TEXTURE_ID = 6;
+constexpr uint16_t TRENCH_SIDE_GREEBLE_TEXTURE_NUMBER = 3;
+using Super = RSROScene;
+
 RSRTTScene::RSRTTScene(Private)
-	: RSRScene()
+	: Super(), m_trenchManager(nullptr)
 {
     m_physicContext = PhysicContext::DEFAULT_MOON;
+
+    std::vector<uint16_t> trenchTopGreebleTextureIDs = std::vector<uint16_t>();
+    trenchTopGreebleTextureIDs.reserve(TRENCH_TOP_GREEBLE_TEXTURE_NUMBER);
+
+    constexpr uint16_t pastTopGreebleLastIndex = FIRST_TRECH_TOP_GREEBLE_TEXTURE_ID + TRENCH_TOP_GREEBLE_TEXTURE_NUMBER;
+    for (uint16_t i = FIRST_TRECH_TOP_GREEBLE_TEXTURE_ID; i < pastTopGreebleLastIndex; ++i)
+    {
+        trenchTopGreebleTextureIDs.push_back(i);
+    }
+
+    std::vector<uint16_t> trenchSideGreebleTextureIDs = std::vector<uint16_t>();
+    trenchSideGreebleTextureIDs.reserve(TRENCH_SIDE_GREEBLE_TEXTURE_NUMBER);
+
+    constexpr uint16_t pastSideGreebleLastIndex = FIRST_TRECH_SIDE_GREEBLE_TEXTURE_ID + TRENCH_SIDE_GREEBLE_TEXTURE_NUMBER;
+    for (uint16_t i = FIRST_TRECH_SIDE_GREEBLE_TEXTURE_ID; i < pastSideGreebleLastIndex; ++i)
+    {
+        trenchSideGreebleTextureIDs.push_back(i);
+    }
+
+    m_trenchManager = std::make_shared<RSRTrenchManager>(std::move(trenchSideGreebleTextureIDs), std::move(trenchTopGreebleTextureIDs));
 }
 
-bool RSRush::RSRTTScene::Load()
+bool RSRTTScene::Load()
 {
-	bool bAllSucessfull = RSRScene::Load();
+	bool bAllSucessfull = Super::Load();
 	RSRAssetManager* pAssetManager = &RSRAssetManager::Get();
 	m_gameManager = std::make_shared<RSRTTGameManager>();
 
 	m_playerPawn = std::make_shared<RSRTT404Pawn>();
     m_playerPawn->SetSelfReference(m_playerPawn);
 	m_playerPawn->GenerateMesh();
-	RSRush::RSRPhysicManager::Get().AddPhysicalEntity(m_playerPawn->GeneratePhysicBody());
+	RSRPhysicManager::Get().AddPhysicalEntity(m_playerPawn->GeneratePhysicBody());
 
 
 	m_gameManager->InitializeGame(this->m_thisWPtr);
@@ -43,13 +76,34 @@ bool RSRush::RSRTTScene::Load()
 	}
 	else
 	{
-		m_topLeftSquare2D = RSRush::RSRBasicShapes::Get().GetRegisterNewPlane2D
+		m_topLeftSquare2D = RSRBasicShapes::Get().GetRegisterNewPlane2D
 		(TEXT("TopLeftSquare2D"),
 			DirectX::XMFLOAT4(1.f, 1.f, 1.f, 1.f),
 			DirectX::XMFLOAT2(-1.f, -1.f),
 			DirectX::XMFLOAT2(0.f, 0.f),
 			DirectX::XMFLOAT2(1.f, 1.f));
 	}
+    AddNewSObject(std::make_shared<RSRODrawableBackground>
+        (
+            RSRTransform
+            {
+                .Position = DirectX::XMFLOAT3{ 9900.0f, 0.0f, 0.0f },
+                .Rotation = DirectX::XMFLOAT3(0.f, 90.f, 10.f),
+                .Scale = DirectX::XMFLOAT3(50000.f, 50000.f, 50000.f),
+            },
+            1
+        ));
+    m_drawableLightSource = AddNewSObject(std::make_shared<RSRODrawableLightSource>
+        (
+            RSRTransform 
+            {
+                .Position = DirectX::XMFLOAT3{ 7500.0f, 1500.0f, 2500.0f },
+                .Rotation = DirectX::XMFLOAT3(0.f, 0.f, 0.f),
+                .Scale = DirectX::XMFLOAT3(100.f, 100.f, 100.f),
+            },
+            /*Handle as SObject*/true,
+            2
+        ));
 
 	//Copy CPU Resource --> GPU Resource
 	auto* verticesCmdList = DXContext::Get().InitRenderCommandList();
@@ -57,70 +111,103 @@ bool RSRush::RSRTTScene::Load()
 
 	_RF_FALSE(m_topLeftSquare2D.get()->UploadResources(DXContext::Get().GetDevice().Get(), verticesCmdList));
 
-	_RF_FALSE(RSRush::RSRBasicShapes::Get().UploadResources(DXContext::Get().GetDevice().Get(), verticesCmdList));
+	_RF_FALSE(RSRBasicShapes::Get().UploadResources(DXContext::Get().GetDevice().Get(), verticesCmdList));
 #if DEBUG_PHYSIC
-	_RF_FALSE(RSRush::RSRPhysicManager::Get().UploadResources(DXContext::Get().GetDevice().Get(), verticesCmdList));
+	_RF_FALSE(RSRPhysicManager::Get().UploadResources(DXContext::Get().GetDevice().Get(), verticesCmdList));
 #endif
 	if (!m_playerPawn->UploadResources(DXContext::Get().GetDevice().Get(), verticesCmdList))
 	{
 		RSRLog::LogWarning(TEXT("Fail Upload"));
 	}
 	//must be after InitializeGame or move 'RSRTrenchManager::BeginNewTrench' Here
-	if (!RSRush::RSRTrenchManager::Get().UploadBeingNewResources(DXContext::Get().GetDevice().Get(), verticesCmdList))
+	if (!m_trenchManager->UploadBeingNewResources(DXContext::Get().GetDevice().Get(), verticesCmdList))
 	{
 		RSRLog::LogWarning(TEXT("TODO : Implement Start Trench special begin and upload prcedure !"));
 	}
+
+    UploadSOResources(DXContext::Get().GetDevice().Get(), verticesCmdList);
+
 	DXContext::Get().ExecuteRenderCommandList();
 	verticesCmdList = nullptr;
 
 	m_topLeftSquare2D.get()->FreeUploadBuffer();
-	RSRush::RSRBasicShapes::Get().FreeUploadBuffers();
+	RSRBasicShapes::Get().FreeUploadBuffers();
 #if DEBUG_PHYSIC
-	RSRush::RSRPhysicManager::Get().FreeUploadBuffers();
+	RSRPhysicManager::Get().FreeUploadBuffers();
 #endif
 	_RF_FALSE(m_playerPawn->FreeUploadBuffers());
-	_RF_FALSE(RSRush::RSRTrenchManager::Get().FreeUploadBuffers());
+	_RF_FALSE(m_trenchManager->FreeUploadBuffers());
+
+    FreeSOUploadBuffers();
+
+    std::shared_ptr<RSRTexture2D> greebleTexture;
+    {
+        RSRComputeGreebleTexture greebleTask(512, 512, 32, 4, DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM);
+        greebleTask.CreateResources(DXContext::Get().GetDevice().Get());
+        auto list = DXContext::Get().InitRenderCommandList();
+        greebleTask.Compute(list);
+        DXContext::Get().ExecuteRenderCommandList();
+        list = nullptr;
+        greebleTexture = greebleTask.ResultBufferToTexture2D();
+    }
 
 
 	//Textures
-    static const std::string auge_512_512_BGRA_32BPP = (std::filesystem::path(TEXT("Textures")) / TEXT("auge_512_512_BGRA_32BPP.png")).string();
-	m_3dTextures.push_back(pAssetManager->AddTextureAsset(auge_512_512_BGRA_32BPP, false));
+    /*01*/ static const std::string space_512_512_BGRA_32BPP = (std::filesystem::path(TEXT("Textures")) / TEXT("space_512_512_BGRA_32BPP.png")).string();
+    /*01*/ m_3dTextures.push_back(pAssetManager->AddTextureAsset(space_512_512_BGRA_32BPP, false));
 
-    static const std::string auge_512_512_BGRA_32BPP_R = (std::filesystem::path(TEXT("Textures")) / TEXT("auge_512_512_BGRA_32BPP_R.png")).string();
-	m_3dTextures.push_back(pAssetManager->AddTextureAsset(auge_512_512_BGRA_32BPP_R, false));
+    /*02*/ static const std::string sun_512_512_BGRA_32BPP = (std::filesystem::path(TEXT("Textures")) / TEXT("sun_512_512_BGRA_32BPP.png")).string();
+    /*02*/ m_3dTextures.push_back(pAssetManager->AddTextureAsset(sun_512_512_BGRA_32BPP, false));
+    
+    /*03*/ static const std::string GreebleTexture_Simple_00 = (std::filesystem::path(TEXT("Textures")) / TEXT("GreebleTexture_Simple_00.png")).string();
+	/*03*/ m_3dTextures.push_back(pAssetManager->AddTextureAsset(GreebleTexture_Simple_00, false));
 
-    static const std::string auge_512_512_BGRA_32BPP_G = (std::filesystem::path(TEXT("Textures")) / TEXT("auge_512_512_BGRA_32BPP_G.png")).string();
-	m_3dTextures.push_back(pAssetManager->AddTextureAsset(auge_512_512_BGRA_32BPP_G, false));
+    /*04*/ static const std::string GreebleTexture_Simple_01 = (std::filesystem::path(TEXT("Textures")) / TEXT("GreebleTexture_Simple_01.png")).string();
+	/*04*/ m_3dTextures.push_back(pAssetManager->AddTextureAsset(GreebleTexture_Simple_01, false));
 
-    static const std::string auge_512_512_BGRA_32BPP_B = (std::filesystem::path(TEXT("Textures")) / TEXT("auge_512_512_BGRA_32BPP_B.png")).string();
-	m_3dTextures.push_back(pAssetManager->AddTextureAsset(auge_512_512_BGRA_32BPP_B, false));
+    /*05*/ static const std::string GreebleTexture_Simple_02 = (std::filesystem::path(TEXT("Textures")) / TEXT("GreebleTexture_Simple_02.png")).string();
+	/*05*/ m_3dTextures.push_back(pAssetManager->AddTextureAsset(GreebleTexture_Simple_02, false));
 
-    static const std::string target_512_512_BGRA_32BPP = (std::filesystem::path(TEXT("Sprites")) / TEXT("target_512_512_BGRA_32BPP.png")).string();
-	m_2dTextures.push_back(pAssetManager->AddTextureAsset(target_512_512_BGRA_32BPP, false));
+    /*06*/ static const std::string GreebleTexture_Outline_00 = (std::filesystem::path(TEXT("Textures")) / TEXT("GreebleTexture_Outline_00.png")).string();
+	/*06*/ m_3dTextures.push_back(pAssetManager->AddTextureAsset(GreebleTexture_Outline_00, false));
 
-    static const std::string heart_ai_1 = (std::filesystem::path(TEXT("Sprites")) / TEXT("heart_ai_1.png")).string();
-	m_2dTextures.push_back(pAssetManager->AddTextureAsset(heart_ai_1, false));
+    /*07*/ static const std::string GreebleTexture_Outline_01 = (std::filesystem::path(TEXT("Textures")) / TEXT("GreebleTexture_Outline_01.png")).string();
+	/*07*/ m_3dTextures.push_back(pAssetManager->AddTextureAsset(GreebleTexture_Outline_01, false));
 
-    static const std::string heart_ai_0 = (std::filesystem::path(TEXT("Sprites")) / TEXT("heart_ai_0.png")).string();
-	m_2dTextures.push_back(pAssetManager->AddTextureAsset(heart_ai_0, false));
+    /*08*/ static const std::string GreebleTexture_Outline_02 = (std::filesystem::path(TEXT("Textures")) / TEXT("GreebleTexture_Outline_02.png")).string();
+    /*08*/ m_3dTextures.push_back(pAssetManager->AddTextureAsset(GreebleTexture_Outline_02, false));
+
+    /*00*/ static const std::string target_512_512_BGRA_32BPP = (std::filesystem::path(TEXT("Sprites")) / TEXT("target_512_512_BGRA_32BPP.png")).string();
+    /*00*/ m_2dTextures.push_back(pAssetManager->AddTextureAsset(target_512_512_BGRA_32BPP, false));
+
+    /*01*/ static const std::string heart_custom_0 = (std::filesystem::path(TEXT("Sprites")) / TEXT("heart_custom_0.png")).string();
+	/*01*/ m_2dTextures.push_back(pAssetManager->AddTextureAsset(heart_custom_0, false));
+
+    /*02*/ static const std::string heart_custom_1 = (std::filesystem::path(TEXT("Sprites")) / TEXT("heart_custom_1.png")).string();
+	/*02*/ m_2dTextures.push_back(pAssetManager->AddTextureAsset(heart_custom_1, false));
 
 	//Copy CPU Resource --> GPU Resource
 	auto* allocationCmdList = DXContext::Get().InitRenderCommandList();
 
-	RSRush::RSRTexture2D::UploadResources(m_3dTextures, DXContext::Get().GetDevice().Get(), allocationCmdList, m_srvheap3D);
+	RSRTexture2D::UploadResources(m_3dTextures, DXContext::Get().GetDevice().Get(), allocationCmdList);
 
-	RSRush::RSRTexture2D::UploadResources(m_2dTextures, DXContext::Get().GetDevice().Get(), allocationCmdList, m_srvheap2D);
+	RSRTexture2D::UploadResources(m_2dTextures, DXContext::Get().GetDevice().Get(), allocationCmdList);
 
 	//EyeTexture->UploadResources(DXContext::Get().GetDevice().Get(), allocationCmdList, srvheap3D);
 
 	//Execute Upload resources CommandList.
 	DXContext::Get().ExecuteRenderCommandList();
+
+    m_3dTextures.insert(m_3dTextures.begin(), greebleTexture);
+    RSRTexture2D::CreateSRVHeapForTextures(m_3dTextures, DXContext::Get().GetDevice().Get(), m_srvheap3D);
+    RSRTexture2D::CreateSRVHeapForTextures(m_2dTextures, DXContext::Get().GetDevice().Get(), m_srvheap2D);
+
 	allocationCmdList = nullptr;
 
 	return  bAllSucessfull;
 }
 
-bool RSRush::RSRTTScene::UnLoad()
+bool RSRTTScene::UnLoad()
 {
 	bool bAllSucessfull = true;
 
@@ -139,20 +226,22 @@ bool RSRush::RSRTTScene::UnLoad()
 
     if (m_playerPawn->GetHasBeenRegistered())
     {
-        RSRush::RSRPhysicManager::Get().RemovePhysicalEntity(m_playerPawn->GetEditKey());
+        RSRPhysicManager::Get().RemovePhysicalEntity(m_playerPawn->GetEditKey());
     }
 
 	bool correctlyFreed = m_playerPawn->FreeResourceBuffers();
 	correctlyFreed = m_topLeftSquare2D.get()->FreeResourcesBuffer() && correctlyFreed;
-	correctlyFreed = RSRush::RSRTrenchManager::Get().FreeResourceBuffers() && correctlyFreed;
+	correctlyFreed = m_trenchManager->FreeResourceBuffers() && correctlyFreed;
 
 	m_playerPawn.reset();
 	m_topLeftSquare2D.reset();
+    m_drawableLightSource.reset();
 	RSRAssetManager::Get().RemoveAsset(TEXT("TopLeftSquare2D"));
 
 	m_gameManager->ShutdownGame();
 
-	return RSRScene::UnLoad() && bAllSucessfull;
+    m_bFreeSOResourceOnUnload = true;
+	return Super::UnLoad() && bAllSucessfull;
 }
 
 void pukeColor(float* color)
@@ -172,22 +261,54 @@ void pukeColor(float* color)
     }
 }
 
-bool RSRush::RSRTTScene::Render(const double InGameTime, const double InDeltaTime)
+bool RSRTTScene::Render(const double InGameTime, const double InDeltaTime)
 {
-    bool bAllSucessfull = RSRScene::Render(InGameTime, InDeltaTime);
+    bool bAllSucessfull = Super::Render(InGameTime, InDeltaTime);
 
     std::shared_ptr<const RSRTTGameManager> ttGameManager = std::static_pointer_cast<const RSRTTGameManager>(m_gameManager);
     auto playerController = ttGameManager->GetPlayerController(0);
 
-    RSRush::MVP_DL_Consts matrixes
+    const RSRCameraData* CameraData = playerController->GetCameraData();
+    if (!CameraData)
+    {
+        RSRLog::LogError(TEXT("Error no pawn or camera from player Controller !"));
+        return 0;
+    }
+
+#pragma region Init Matrixes
+
+    float diffuseStrength = 0.15f;
+    float anbiantStrength = 0.35f;
+    float specularStrength = 5.5f;
+    anbiantStrength = (1.f / diffuseStrength) * anbiantStrength;
+    MVP_DL_Consts matrixes
     {
         .ViewProjMat = DirectX::XMFLOAT4X4(),
         .ModMat = DirectX::XMFLOAT4X4(),
         .invProjModMat = DirectX::XMFLOAT4X4(),
-        .CamPos = DirectX::XMFLOAT4(),
-        .lightPos_AmbLight = DirectX::XMFLOAT4 { 50.0f, 30.0f, 40.0f                       ,/*AmbLight */ 0.1f },
-        .lightCol_SpecLight = DirectX::XMFLOAT4 { 1.0f * 0.25f, 1.0f * 0.25f, 0.6f * 0.25f  ,/*SpecLight*/ 5.5f }
+        .CamPos = DirectX::XMFLOAT4()
+        //.lightPos_AmbLight    //Handled by SetLightDatas
+        //.lightCol_SpecLight   //Handled by SetLightDatas
     };
+    
+    matrixes.SetLightDatas
+    (
+        /*Color*/ DirectX::XMFLOAT3{ 1.f, 1.f, 0.6f },
+        /*DiffStr*/ 0.15f, /*AmbStr*/ 0.35f, /*SpecStr*/ 0.2f,
+        /*LightPos*/ /*mds::unoptimized_add3(*/m_drawableLightSource.lock()->GetTrsMat().GetTransform().Position/*, DirectX::XMFLOAT3{-150.f, 0.f, 0.f})*/
+    );
+
+    DirectX::XMMATRIX CameraViewMatrix = CameraData->ComputeView();
+    DirectX::XMMATRIX CameraProjectionMatrix = CameraData->ComputeProjection();
+    DirectX::XMMATRIX CameraViewProjectionMatrix = DirectX::XMMatrixMultiply(CameraViewMatrix, CameraProjectionMatrix);
+
+    DirectX::XMStoreFloat4x4(&matrixes.ViewProjMat, CameraViewProjectionMatrix);
+
+    //Camera position for phong
+    matrixes.CamPos = DirectX::XMFLOAT4(CameraData->Position.x, CameraData->Position.y, CameraData->Position.z, 1.0f);
+
+
+#pragma endregion Init Matrixes
 
     //Begin Drawing
     auto* cmdList = DXContext::Get().InitRenderCommandList();
@@ -212,150 +333,59 @@ bool RSRush::RSRTTScene::Render(const double InGameTime, const double InDeltaTim
         .bottom = (LONG)DXWindow::Get().GetHeight()   //narrow conversion
     };
 
-    //myPC->GetCameraData().FOV = vp.Width / vp.Height;
     cmdList->RSSetScissorRects(1, &scRect);
 
-    //static float CameraAngle = 0;
-    //CameraAngle += 0.5f * (float)(LastDeltaTimeSecond * (2 * mds::RMath::PI));
-
     //----------- Draw3D ------------//
-    // 
-    //std::cout << "X : " << CameraData.Position.x << ", Y : " << CameraData.Position.y << ", Z : " << CameraData.Position.z <<  std::endl;
 
-    const RSRush::RSRCameraData* CameraData = playerController->GetCameraData();
-    if (!CameraData)
-    {
-        RSRLog::LogError(TEXT("Error no pawn or camera from player Controller !"));
-        return 0;
-    }
-    DirectX::XMMATRIX CameraViewMatrix = CameraData->ComputeView();
-    DirectX::XMMATRIX CameraProjectionMatrix = CameraData->ComputeProjection();
-    DirectX::XMMATRIX CameraViewProjectionMatrix = DirectX::XMMatrixMultiply(CameraViewMatrix, CameraProjectionMatrix);
-
-    static double lastLog = 0.;
-    if (false && lastLog > 1.)
-    {
-
-        std::cout
-            << "Position : { x : " << CameraData->Position.x << ", y : " << CameraData->Position.y << ", z : " << CameraData->Position.z <<
-            " } \nTarget : { x : " << CameraData->Target.x << ", y : " << CameraData->Target.y << ", z : " << CameraData->Target.z << " }" <<
-            " } \nUp : { x : " << CameraData->Up.x << ", y : " << CameraData->Up.y << ", z : " << CameraData->Up.z << " }" <<
-            " } \nFOV : " << CameraData->FOV << ", AspectRatio : " << CameraData->AspectRatio << ", NearClip : " << CameraData->NearClip << ", FarClip : " << CameraData->FarClip <<
-            "\nCameraViewMatrix :\n" << mds::RLog::XMMatrixToString(CameraViewMatrix) <<
-            "\nCameraProjectionMatrix :\n" << mds::RLog::XMMatrixToString(CameraProjectionMatrix) <<
-            "\nCameraViewProjectionMatrix :\n" << mds::RLog::XMMatrixToString(CameraViewProjectionMatrix) <<
-            std::endl;
-        lastLog = 0.;
-    }
-    else
-    {
-        lastLog += InDeltaTime;
-    }
-
-
-
-    DirectX::XMStoreFloat4x4(&matrixes.ViewProjMat, CameraViewProjectionMatrix);
-
-    //std::cout<<Context3dCBV.viewProjectionMatrix << std::endl;
-
-    //DirectX::XMMATRIX IdentityMatrix = DirectX::XMMatrixIdentity();
-    //DirectX::XMStoreFloat4x4(&matrixes.ModMat, IdentityMatrix);
-    //-- PS --
-
+    //Setup
     cmdList->SetPipelineState(m_programInstance->GetPSO3D().Get());
     cmdList->SetGraphicsRootSignature(m_programInstance->GetRootSig3D().Get());
     cmdList->SetDescriptorHeaps(1, m_srvheap3D.GetAddressOf());
-    //a draw
-
-    //Context b0
-    //Mesh b1 depend per mesh
-
 
     cmdList->SetGraphicsRootDescriptorTable(1, m_srvheap3D->GetGPUDescriptorHandleForHeapStart());
+
+    cmdList->SetGraphicsRoot32BitConstants(0, MVP_DL_Consts::S32B_STRUCT, &matrixes, 0);
+
     //Draw
-
-    DirectX::XMVECTOR vScale = { 2.f, 1.f, 1.f, 1.f };
-
-    DirectX::XMVECTOR vRotation = { DirectX::XMConvertToRadians(0.f),DirectX::XMConvertToRadians(0.f), DirectX::XMConvertToRadians(90.f), 0.f };
-    DirectX::XMVECTOR vTranslation = { 10.f, 0.f, 2.f, 1.f };
-
-
-    // Create the transformation matrix
-    DirectX::XMMATRIX mat = DirectX::XMMatrixTransformation(
-        DirectX::XMVectorZero(), // scaling origin
-        DirectX::XMQuaternionIdentity(), // rotation origin
-        vScale, // scale vector
-        DirectX::XMVectorZero(), // rotation origin
-        DirectX::XMQuaternionRotationRollPitchYawFromVector(vRotation), // rotation quaternion
-        vTranslation // translation vector
-    );
-
-    DirectX::XMStoreFloat4x4(&matrixes.ModMat, mat);
-
-    //Camera position for phong
-    matrixes.CamPos = DirectX::XMFLOAT4(CameraData->Position.x, CameraData->Position.y, CameraData->Position.z, 1.0f);
-    cmdList->SetGraphicsRoot32BitConstants(0, RSRush::MVP_DL_Consts::S32B_STRUCT, &matrixes, 0);
-
-    DirectX::XMVECTOR ldedCameraPos = DirectX::XMLoadFloat4(&matrixes.CamPos);
-
-    //RSRush::RSRBasicShapes::Get().GetDefSquare().get()->DrawMesh(cmdList);
-
-    matrixes.ModMat =
-    {
-        1.f, 0.f, 0.f, 0.f,
-        0.f, 1.f, 0.f, 0.f,
-        0.f, 0.f, 1.f, 0.f,
-        -0.5f, 0.f, -4.f, 1.f,
-    };
-    //cmdList->SetGraphicsRoot32BitConstants(0, RSRush::MVP_DL_Consts::S32B_STRUCT, &matrixes, 0);
-
-    //RSRush::RSRBasicShapes::Get().GetDefPlane().get()->DrawMesh(cmdList);
-
-    matrixes.ModMat =
-    {
-        10.f, 0.f, 0.f, 0.f,
-        0.f, 0.f, 10.f, 0.f,
-        0.f, 10.f, 0.f, 0.f,
-        0.f, 0.f, 0.f, 1.f,
-    };
-    //Context b0
-    //cmdList->SetGraphicsRoot32BitConstants(0, RSRush::MVP_DL_Consts::S32B_STRUCT, &matrixes, 0);
-
-    //RSRush::RSRBasicShapes::Get().GetDefPlane().get()->DrawMesh(cmdList);
-
-    matrixes.ModMat =
-    {
-        1.f, 0.f, 0.f, 0.f,
-        0.f, 1.f, 0.f, 0.f,
-        0.f, 0.f, 1.f, 0.f,
-        0.f, 0.f, 0.f, 1.f,
-    };
-    //texture t0
-    //cmdList->SetGraphicsRoot32BitConstants(0, RSRush::MVP_DL_Consts::S32B_STRUCT, &matrixes, 0);
-    //RSRush::RSRBasicShapes::Get().GetDefPlane().get()->DrawMesh(cmdList);
-
-    matrixes.ModMat =
-    {
-        1.f, 0.f, 0.f, 0.f,
-        0.f, 1.f, 0.f, 0.f,
-        0.f, 0.f, 1.f, 0.f,
-        0.5f, 1.f, 1.f, 1.f,
-    };
-    //cmdList->SetGraphicsRoot32BitConstants(0, RSRush::MVP_DL_Consts::S32B_STRUCT, &matrixes, 0);
-
-    //RSRush::RSRBasicShapes::Get().GetDefPlane().get()->DrawMesh(cmdList);
-
-    RSRush::RSRTrenchManager::Get().DrawTrench(ldedCameraPos, cmdList);
+    m_trenchManager->DrawTrench(matrixes.CamPos, cmdList);
     m_playerPawn->DrawGeometry(cmdList);
+
+    DrawSOMeshs(cmdList);
+    //m_drawableLightSource.lock()->DrawGeometry(cmdList);
+
+    //----------- DrawInstanced ------------//
+    // 
+    //Setup
+    cmdList->SetPipelineState(m_programInstance->GetPSO3DInstanced().Get());
+    cmdList->SetGraphicsRootSignature(m_programInstance->GetRootSig3DInstanced().Get());
+    //cmdList->SetDescriptorHeaps(1, m_srvheap3D.GetAddressOf()); //already set
+    cmdList->SetGraphicsRootDescriptorTable(1, m_srvheap3D->GetGPUDescriptorHandleForHeapStart());
+
+    RSRush::MVP_DL_ConstsInstanced matrixesInst
+    {
+        .ViewProjMat = matrixes.ViewProjMat,
+        .CamPos = matrixes.CamPos,
+        .lightPos_AmbLight = matrixes.lightPos_AmbLight,
+        .lightCol_SpecLight = matrixes.lightCol_SpecLight
+    };
+    cmdList->SetGraphicsRoot32BitConstants(0, MVP_DL_ConstsInstanced::S32B_STRUCT, &matrixesInst, 0);
+
+
+    //Draw
+    m_instancedMeshes.DrawInstances(cmdList);
 
 #if DEBUG_PHYSIC
     //----------- DrawDebugPhysic ------------//
+
+    //Setup
     cmdList->SetPipelineState(m_programInstance->GetPSODebugPhysic().Get());
     cmdList->SetGraphicsRootSignature(m_programInstance->GetRootSigDebugPhysic().Get());
     DirectX::XMStoreFloat4x4(&matrixes.ViewProjMat, CameraViewProjectionMatrix);
     ModelViewprojectionConstants matrixesDebugPhys = matrixes.ToMVC();
-    cmdList->SetGraphicsRoot32BitConstants(0, RSRush::MVPC::S32B_STRUCT, &matrixesDebugPhys, 0);
-    RSRush::RSRPhysicManager::Get().DrawPhysic(cmdList);
+    cmdList->SetGraphicsRoot32BitConstants(0, MVPC::S32B_STRUCT, &matrixesDebugPhys, 0);
+
+    //Draw
+    RSRPhysicManager::Get().DrawPhysic(cmdList);
 #endif
 
     //----------- Draw2D ------------//
@@ -382,7 +412,7 @@ bool RSRush::RSRTTScene::Render(const double InGameTime, const double InDeltaTim
     };
 
     DirectX::XMFLOAT2 twoDScale = DXWindow::Get().Compute2DScale();
-    RSRush::UICBV uiCBV
+    UICBV uiCBV
     {
         //Center Extends
         .rect = DirectX::XMFLOAT4(0.f, 0.f, 1.f, 1.f),
@@ -405,7 +435,7 @@ bool RSRush::RSRTTScene::Render(const double InGameTime, const double InDeltaTim
     // -- IA --
     //TriangleMesh.get()->DrawMesh(cmdList);
     //TriangleMesh2.get()->DrawMesh(cmdList);
-    //RSRush::RSRBasicShapes::Get().GetDefPlane2D().get()->DrawMesh(cmdList);
+    //RSRBasicShapes::Get().GetDefPlane2D().get()->DrawMesh(cmdList);
 
     //TopLeftSquare2D.get()->DrawMesh(cmdList);
 
@@ -429,7 +459,7 @@ bool RSRush::RSRTTScene::Render(const double InGameTime, const double InDeltaTim
     return bAllSucessfull;
 }
 
-bool RSRush::RSRTTScene::PrePassTick(const double InGameTime, const double InDeltaTime)
+bool RSRTTScene::PrePassTick(const double InGameTime, const double InDeltaTime)
 {
     bool bAllSucessfull = RSRScene::PrePassTick(InGameTime, InDeltaTime);
 
@@ -440,23 +470,24 @@ bool RSRush::RSRTTScene::PrePassTick(const double InGameTime, const double InDel
     return bAllSucessfull;
 }
 
-bool RSRush::RSRTTScene::LateTickSync(const double InGameTime, const double InDeltaTime)
+bool RSRTTScene::LateTickSync(const double InGameTime, const double InDeltaTime)
 {
     bool bAllSucessfull = RSRScene::LateTickSync(InGameTime, InDeltaTime);
 
     std::shared_ptr<RSRTTGameManager> ttGameManager = std::static_pointer_cast<RSRTTGameManager>(m_gameManager);
     auto playerController = ttGameManager->GetPlayerController(0);
 
-    UINT64 UploadFence = DXContext::Get().UpdateUploadCommandQueueState(InDeltaTime);
+    UINT64 UploadFence = DXContext::Get().UpdateAsyncUploadCommandQueueState(InDeltaTime);
 
     ttGameManager->LateTickSync(InGameTime, InDeltaTime);
 
     double CurrentProgression = ttGameManager->GetPrePassProgression();
-    RSRush::RSRTrenchManager::Get().UpdateTrench(InDeltaTime, CurrentProgression, UploadFence);
+    m_trenchManager->UpdateTrench(InDeltaTime, CurrentProgression, UploadFence);
 
     return bAllSucessfull;
 }
 
 RSRTTScene::~RSRTTScene()
 {
+    m_trenchManager.reset();
 }

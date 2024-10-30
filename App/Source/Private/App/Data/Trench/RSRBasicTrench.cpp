@@ -63,8 +63,8 @@ namespace RSRush
     };
 };
 
-RSRBasicTrench::RSRBasicTrench()
-:RSRTrench()
+RSRBasicTrench::RSRBasicTrench(RSRTrenchManager* InTrenchManager)
+:RSRTrench(InTrenchManager)
 {
 }
 

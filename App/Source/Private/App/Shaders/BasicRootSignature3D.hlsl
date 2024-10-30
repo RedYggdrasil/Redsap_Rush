@@ -6,7 +6,7 @@
 * Root Signatures Layout (GPU)                              DWORD Size : 62/64
 * - b0:     VSConstants         "VSConstants"               [00 -> 60]
 * - t0...   Texture2D<float4>   "Texture3D"                 [60 -> 61]
-* - t0...   Texture2D<float4>   "Texture2D"                 [53 -> 62]
+* - t0...   Texture2D<float4>   "Texture2D"                 [61 -> 62]
 * 
 * --- Statics ---
 * - s0      Sampler for "Texture3D"

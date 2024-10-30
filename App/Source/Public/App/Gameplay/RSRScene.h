@@ -1,7 +1,9 @@
 #pragma once
 
 #include "App/Data/Physic/RSRPhysicContext.h"
+#include "App/Gameplay/Scene/RSRSceneInstancedMeshes.h"
 #include <memory>
+struct ID3D12GraphicsCommandList7;
 namespace RSRush
 {
 	class GameManager;
@@ -14,6 +16,8 @@ namespace RSRush
 		RSRProgramInstance* m_programInstance;
 		std::shared_ptr<GameManager> m_gameManager;
 		RSRPhysicContext m_physicContext = PhysicContext::DEFAULT_EARTH;
+
+		RSRSceneInstancedMeshes m_instancedMeshes;
 
 	public:
 		inline std::shared_ptr<GameManager> GetGameManager() const { return m_gameManager; }
@@ -36,6 +40,12 @@ namespace RSRush
 		/// Read the result of PrepassTick and Physic Pass, and apply them to object before rendering
 		/// </summary>
 		virtual bool LateTickSync(const double InGameTime, const double InDeltaTime) { return true; };
+
+		bool UpdateMeshInstanceBuffers(const double InGameTime, const double InDeltaTime, ID3D12GraphicsCommandList7* InFrameUploadCommandList);
+		bool ClearUnusedMeshInstanceBuffers();
+
+		void RegisterInstancedMesheHolder(RSRIInstancedMesheHolder* InMeshHolder, std::shared_ptr<RSRMesh> InMesh);
+		void UnregisterInstancedMesheHolder(RSRIInstancedMesheHolder* InMeshHolder, std::shared_ptr<RSRMesh> InMesh);
 
 	public:
 		virtual ~RSRScene();

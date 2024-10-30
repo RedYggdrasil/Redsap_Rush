@@ -14,11 +14,13 @@ namespace RSRush
 {
 
 	class RSRPlayerPath;
+	class RSRTrenchManager;
 	class RSRTrench : public RSRIPhysicalEntity
 	{
 	protected:
 		static UINT64 s_nextInstanceID;
 
+		RSRTrenchManager* m_trenchManager;
 		bool m_bThreadedInitializationCompleted = false;
 		std::weak_ptr<RSRush::RSRPlayerPath> m_pPlayerPath;
 
@@ -72,7 +74,7 @@ namespace RSRush
 		
 		void SetStartPositionData(double InStartProgression, const DirectX::XMFLOAT3& InStartLocation, const DirectX::XMFLOAT3& InStartDirection, std::weak_ptr<RSRush::RSRPlayerPath> InPlayerPath);
 	protected:
-		RSRTrench();
+		RSRTrench(RSRTrenchManager* InTrenchManager);
 		void SetEndPositionData(double InEndProgression, const DirectX::XMFLOAT3& InEndLocation, const DirectX::XMFLOAT3& InEndDirection);
 
 		virtual void PositionSelf() = 0;
@@ -99,5 +101,7 @@ namespace RSRush
 			.Min = DirectX::XMINT3(-RSRTrenchDefs::HALF_TRENCH_LENGHT_VXL, +RSRTrenchDefs::HALF_TRENCH_WIDTH_VXL, RSRTrenchDefs::GROUND_HEIGHT_VXL),
 			.Max = DirectX::XMINT3(+RSRTrenchDefs::HALF_TRENCH_LENGHT_VXL, +RSRTrenchDefs::HALF_TOTAL_WIDTH_VXL , RSRTrenchDefs::ROOF_HEIGHT_VXL  )
 		};
+	private:
+		friend class RSRTrenchManager; //To acess s_nextInstanceID
 	};
 }

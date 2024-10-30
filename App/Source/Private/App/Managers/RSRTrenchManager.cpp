@@ -11,6 +11,7 @@
 #include "App/Game/RSRPlayerPath.h"
 #include "App/Managers/RSRPhysicManager.h"
 #include "App/Tools/RSRLog.h"
+#include "App/System/RSRRandomizer.h"
 #include <Tracy.hpp>
 
 using namespace DirectX;
@@ -25,7 +26,6 @@ static const double GENERATE_PROGRESSION_DISTANCE = 30.;
 const XMFLOAT3 START_LOCATION = XMFLOAT3(0.f, 0.f, 0.f);
 const XMFLOAT3 START_DIRECTION = XMFLOAT3(1.f, 0.f, 0.f);
 
-RSRTrenchManager RSRTrenchManager::Instance = RSRTrenchManager();
 
 void RSRTrenchManager::BeginNewTrench(double InCurrentProgression, std::weak_ptr<RSRPlayerPath> InPlayerPath)
 {
@@ -137,14 +137,15 @@ bool RSRTrenchManager::FreeResourceBuffers()
 	return bCumulativeSucess;
 }
 
-bool RSRTrenchManager::DrawTrench(DirectX::FXMVECTOR InCameraPosition, ID3D12GraphicsCommandList7* InDrawCommandList)
+bool RSRush::RSRTrenchManager::DrawTrench(DirectX::XMFLOAT4 InCameraPosition, ID3D12GraphicsCommandList7* InDrawCommandList)
 {
+	DirectX::XMVECTOR4 lCameraPosition = XMLoadFloat4(&InCameraPosition);
 	bool bCumulativeSucess = true;
 	for (std::shared_ptr<RSRTrench>& Trench : m_segments)
 	{
 		if (Trench->GetResourceState() == mds::RResourceStateType::ResourceLive)
 		{
-			if (!Trench->DrawTrench(InCameraPosition, InDrawCommandList))
+			if (!Trench->DrawTrench(lCameraPosition, InDrawCommandList))
 			{
 				bCumulativeSucess = false;
 			}
@@ -153,10 +154,13 @@ bool RSRTrenchManager::DrawTrench(DirectX::FXMVECTOR InCameraPosition, ID3D12Gra
 	return bCumulativeSucess;
 }
 
-RSRTrenchManager::RSRTrenchManager()
-:m_segments(), m_generatingSegments()
+
+RSRush::RSRTrenchManager::RSRTrenchManager(std::vector<uint16_t>&& InSideGreedbleTextureIDs, std::vector<uint16_t>&& InTopGreedbleTextureIDs)
+	:m_segments(), m_generatingSegments(), gen(RSRRandomizer::Get().CreateTrenchManagerGenerator()),
+	m_sideGreedbleTextureIDs(std::move(InSideGreedbleTextureIDs)), m_topGreedbleTextureIDs(std::move(InTopGreedbleTextureIDs))
 {
 }
+
 
 bool RSRTrenchManager::IsNeedToGenerateSegments(double InCurrentProgression) const
 {
@@ -170,7 +174,7 @@ bool RSRTrenchManager::IsNeedToGenerateSegments(double InCurrentProgression) con
 std::unique_ptr<RSRTrench> RSRTrenchManager::GetNewTrenchInstance()
 {
 	//TODO : Randomly choose a new Trench class and instanciate it
-	return std::make_unique<RSRVoxalTrench>();
+	return std::make_unique<RSRVoxalTrench>(this, m_sideGreedbleTextureIDs, m_topGreedbleTextureIDs);
 }
 
 bool RSRush::RSRTrenchManager::IsTrenchGenerationTaskOnging() const
@@ -213,7 +217,7 @@ void RSRTrenchManager::StartUploadingTrenchMesh()
 	m_currentlyUploading = true;
 	bool bCumulativeSucess = true;
 	ID3D12Device10* device = DXContext::Get().GetDevice().Get();
-	ID3D12GraphicsCommandList7* uploadCommandList = DXContext::Get().GetUploadList();
+	ID3D12GraphicsCommandList7* uploadCommandList = DXContext::Get().GetAsyncUploadList();
 
 	for (const auto& generatedSegment : m_generatingSegments)
 	{
@@ -227,7 +231,7 @@ void RSRTrenchManager::StartUploadingTrenchMesh()
 			RSRLog::LogWarning(TEXT(L_PATH "Unexepected behavior, elements of m_generatingSegments in RSRTrenchManager should always be in NeedUpload State !"));
 		}
 	}
-	m_waitingForUploadFence = DXContext::Get().ReportAddedUploadTask();
+	m_waitingForUploadFence = DXContext::Get().ReportAddedAsyncUploadTask();
 }
 
 void RSRTrenchManager::OnUploadingTrenchMeshEnded()

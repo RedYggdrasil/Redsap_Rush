@@ -19,6 +19,8 @@ namespace RSRush
 	public:
 		virtual UINT GetVertexCount() const override { return (UINT)m_vertexes.size(); }
 		virtual const void* GetVertexAdress() const override { return &m_vertexes[0]; }
+		std::vector<VertexPositionUVColor>& GetVertices() { return m_vertexes; }
+		const std::vector<VertexPositionUVColor>& GetVertices() const { return m_vertexes; }
 
 	public:
 		RSRMesh3D(const std::vector<VertexPositionUVColor>& InVertexes);

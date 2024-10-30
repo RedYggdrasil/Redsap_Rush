@@ -3,15 +3,21 @@
 #include <App/Tools/RSRLog.h>
 
 RSRush::RSRSObject::RSRSObject(const mds::RAssetAuthority InMainMeshAuthority)
-	: RSRSObject(InMainMeshAuthority, false)
+	: RSRSObject(InMainMeshAuthority, false, false)
 {
 }
 
 RSRush::RSRSObject::RSRSObject(const mds::RAssetAuthority InMainMeshAuthority, const bool bInIsHandledAsSObject)
-	:m_bIsHandledAsSObject(bInIsHandledAsSObject), m_mainTransform(RSRush::RSRTransformMatrix(mds::TRS_IDENTITY)), m_mainMeshAuthority(InMainMeshAuthority), m_mainMesh(nullptr)
+	:RSRSObject(InMainMeshAuthority, bInIsHandledAsSObject, false)
+{
+}
+
+RSRush::RSRSObject::RSRSObject(const mds::RAssetAuthority InMainMeshAuthority, const bool bInIsHandledAsSObject, const bool bInIsDrawnAsInstance)
+	:m_bIsHandledAsSObject(bInIsHandledAsSObject), m_bIsDrawnAsInstance(bInIsDrawnAsInstance), m_mainTransform(RSRush::RSRTransformMatrix(mds::TRS_IDENTITY)), m_mainMeshAuthority(InMainMeshAuthority), m_mainMesh(nullptr)
 {
 	assert(m_mainMeshAuthority != mds::RAssetAuthority::Shared && "AssetAuthority Shared need to be designed with asset manager and temp stack shared_ptr in mind !, unhandled for now !");
 }
+
 
 RSRush::RSRSObject::~RSRSObject()
 {

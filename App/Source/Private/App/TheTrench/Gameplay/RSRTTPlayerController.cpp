@@ -13,7 +13,12 @@ bool RSRush::RSRTTPlayerController::GetIsActiveAction(EAction EInAction) const
 
 	for (size_t i = 0; i < COUNT_ACTION; ++i)
 	{
-		if (this->m_keyState[0][mds::UT_cast(m_actionToInputKeyTypes[mds::UT_cast(EInAction)][i])])
+		if 
+		(
+			m_actionToInputKeyTypes[mds::UT_cast(EInAction)][i] < EMDSInputKeyType::COUNT 
+			&& 
+			this->m_keyState[0][mds::UT_cast(m_actionToInputKeyTypes[mds::UT_cast(EInAction)][i])]
+		)
 		{
 			return true;
 		}
@@ -158,7 +163,7 @@ void RSRush::RSRTTPlayerController::PocessPawn(Pawn* InPawn)
 			.FOV = (5.f / 12.f) * DirectX::XM_PI, //75°
 			.AspectRatio = 16.f / 9.f,
 			.NearClip = 0.1f,
-			.FarClip = 1000.f
+			.FarClip = 10000.f
 				});
 		}
 	}

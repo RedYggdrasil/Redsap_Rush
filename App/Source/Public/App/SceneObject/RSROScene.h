@@ -32,7 +32,16 @@ namespace RSRush
 		virtual bool LateTickSync(const double InGameTime, const double InDeltaTime) override;
 
 	public:
-		std::weak_ptr<RSRush::RSRSObject> AddNewSObject(std::shared_ptr<RSRush::RSRSObject>&& InNewSObject);
+		template<class TRSRSObject>
+		std::weak_ptr<TRSRSObject> AddNewSObject(std::shared_ptr<TRSRSObject>&& InNewSObject)
+		{
+			std::weak_ptr<TRSRSObject> WPtr = InNewSObject;
+			AddNewSObject_inner(std::move(InNewSObject));
+			return WPtr;
+		}
+
+		inline std::weak_ptr<RSRush::RSRSObject> AddNewSObject(std::shared_ptr<RSRush::RSRSObject>&& InNewSObject)
+		{ return AddNewSObject_inner(std::move(InNewSObject)); };
 		void RemoveSObject(std::weak_ptr<RSRush::RSRSObject> InSObjectToRemove);
 		void ClearSObjects();
 
@@ -42,6 +51,9 @@ namespace RSRush
 		bool FreeSOResourceBuffers();
 		virtual bool DrawSOMeshs(ID3D12GraphicsCommandList7* InRenderCommandList) const;
 		virtual bool UnLoad() override;
+
+	private:
+		std::weak_ptr<RSRush::RSRSObject> AddNewSObject_inner(std::shared_ptr<RSRSObject>&& InNewSObject);
 
 	private:
 		void RemoveSObject(std::shared_ptr<RSRush::RSRSObject> InSObjectToRemove);

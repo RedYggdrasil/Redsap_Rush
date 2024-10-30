@@ -18,7 +18,7 @@ namespace RSRush
 	protected:
 		std::shared_ptr<RSRTaskTrenchGeometry> m_GeometryTask;
 	public:
-		RSRBasicTrench();
+		RSRBasicTrench(RSRTrenchManager* InTrenchManager);
 		/*virtual*/ ~RSRBasicTrench() /*override*/;
 		virtual void StartGeneratingMesh();
 	protected:

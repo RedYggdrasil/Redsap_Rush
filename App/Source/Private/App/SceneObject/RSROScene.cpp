@@ -29,7 +29,7 @@ bool RSRush::RSROScene::LateTickSync(const double InGameTime, const double InDel
 	return true;
 }
 
-std::weak_ptr<RSRush::RSRSObject> RSRush::RSROScene::AddNewSObject(std::shared_ptr<RSRush::RSRSObject>&& InNewSObject)
+std::weak_ptr<RSRush::RSRSObject> RSRush::RSROScene::AddNewSObject_inner(std::shared_ptr<RSRush::RSRSObject>&& InNewSObject)
 {
 	std::weak_ptr<RSRush::RSRSObject> returnValue;
 	if (!m_thisWPtr.expired() && InNewSObject)
@@ -120,7 +120,10 @@ bool RSRush::RSROScene::DrawSOMeshs(ID3D12GraphicsCommandList7* InRenderCommandL
 	bool bCumulativeSucess = true;
 	for (std::shared_ptr<RSRSObject> sObject : m_sObjects)
 	{
-		bCumulativeSucess = sObject->DrawGeometry(InRenderCommandList) && bCumulativeSucess;
+		if (!sObject->GetIsDrawnAsInstance())
+		{
+			bCumulativeSucess = sObject->DrawGeometry(InRenderCommandList) && bCumulativeSucess;
+		}
 	}
 	return bCumulativeSucess;
 }

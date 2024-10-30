@@ -32,6 +32,7 @@ const DWORD DXwd::WINDOW_FULLSCREEN_EXSTYLE = WS_EX_APPWINDOW;
 
 bool DXWindow::Init()
 {
+    HRESULT hResult;
     WNDCLASSEXW wcex{};
     wcex.cbSize     = sizeof(wcex);
     wcex.style = CS_OWNDC;
@@ -103,19 +104,16 @@ bool DXWindow::Init()
 
     Microsoft::WRL::ComPtr<IDXGISwapChain1> sc1;
     
-    if 
-        (
-            FAILED(factory->CreateSwapChainForHwnd(
-            DXContext::Get().GetRenderCommandQueue().Get(), m_window,
-            &swd, &sfd, nullptr, &sc1)
-            )
-        )
+    hResult = factory->CreateSwapChainForHwnd(DXContext::Get().GetRenderCommandQueue().Get(), m_window, &swd, &sfd, nullptr, &sc1);
+    if (FAILED(hResult))
     {
+        RSRLog::Log(LOG_EXCEPTION, hResult, TEXT("Failed to create Swap Chain !"));
         return false;
     }
-
-    if (FAILED(sc1.CopyTo(IID_PPV_ARGS(&m_swapChain))))
+    hResult = sc1.CopyTo(IID_PPV_ARGS(&m_swapChain));
+    if (FAILED(hResult))
     {
+        RSRLog::Log(LOG_EXCEPTION, hResult, TEXT("Failed to copy Swap Chain !"));
         return false;
     }
 
@@ -125,8 +123,11 @@ bool DXWindow::Init()
     descHeapDesc.NumDescriptors = DXWindowDefaults::SWAP_CHAIN_BUFFER_COUNT;
     descHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
     descHeapDesc.NodeMask = 0;
-    if (FAILED(DXContext::Get().GetDevice()->CreateDescriptorHeap(&descHeapDesc, IID_PPV_ARGS(&m_rtvDescHeap))))
+    
+    hResult = DXContext::Get().GetDevice()->CreateDescriptorHeap(&descHeapDesc, IID_PPV_ARGS(&m_rtvDescHeap));
+    if (FAILED(hResult))
     {
+        RSRLog::Log(LOG_EXCEPTION, hResult, TEXT("Failed to create DescriptorHeap !"));
         return false;
     }
     //Create CPU view handles
@@ -148,8 +149,10 @@ bool DXWindow::Init()
         .Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE,
         .NodeMask = 0
     };
-    if (FAILED(DXContext::Get().GetDevice()->CreateDescriptorHeap(&dsvDescHeapDesc, IID_PPV_ARGS(&m_dsvDescHeap))))
+    hResult = DXContext::Get().GetDevice()->CreateDescriptorHeap(&dsvDescHeapDesc, IID_PPV_ARGS(&m_dsvDescHeap));
+    if (FAILED(hResult))
     {
+        RSRLog::Log(LOG_EXCEPTION, hResult, TEXT("Failed to create DescriptorHeap m_dsvDescHeap !"));
         return false;
     }
 

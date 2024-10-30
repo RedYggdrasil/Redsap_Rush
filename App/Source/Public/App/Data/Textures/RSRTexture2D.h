@@ -48,15 +48,21 @@ namespace RSRush
 
 	public:
 		RSRTexture2D(const std::filesystem::path& InImagePath);
+		RSRTexture2D(l_ComPtr<ID3D12Resource2> InLoadedGPUResource, const ImageLoader::ImageData& InData);
 
 	public:
 		/*virtual*/~RSRTexture2D()/*override*/;
 	public:
-		virtual bool UploadResources(ID3D12Device10* InDevice, ID3D12GraphicsCommandList7* InUploadCommandList, l_ComPtr<ID3D12DescriptorHeap>& InOutSrvheap);
-		static bool UploadResources(UINT InNbTextures, RSRTexture2D** InTextures, ID3D12Device10* InDevice, ID3D12GraphicsCommandList7* InUploadCommandList, l_ComPtr<ID3D12DescriptorHeap>& InOutSrvheap);
-		static bool UploadResources(std::vector<RSRSharedTexture2DPtr> InTextures, ID3D12Device10* InDevice, ID3D12GraphicsCommandList7* InUploadCommandList, l_ComPtr<ID3D12DescriptorHeap>& InOutSrvheap)
-		{ return UploadResources(0, (UINT)InTextures.size(), InTextures, InDevice, InUploadCommandList, InOutSrvheap); }
-		static bool UploadResources(UINT InStartIndex, UINT InNbTextures, std::vector<RSRSharedTexture2DPtr> InTextures, ID3D12Device10* InDevice, ID3D12GraphicsCommandList7* InUploadCommandList, l_ComPtr<ID3D12DescriptorHeap>& InOutSrvheap);
+		virtual bool UploadResources(ID3D12Device10* InDevice, ID3D12GraphicsCommandList7* InUploadCommandList);
+		static bool UploadResources(UINT InNbTextures, RSRTexture2D** InTextures, ID3D12Device10* InDevice, ID3D12GraphicsCommandList7* InUploadCommandList);
+		static bool UploadResources(std::vector<RSRSharedTexture2DPtr> InTextures, ID3D12Device10* InDevice, ID3D12GraphicsCommandList7* InUploadCommandList)
+		{ return UploadResources(0, (UINT)InTextures.size(), InTextures, InDevice, InUploadCommandList); }
+		static bool UploadResources(UINT InStartIndex, UINT InNbTextures, std::vector<RSRSharedTexture2DPtr> InTextures, ID3D12Device10* InDevice, ID3D12GraphicsCommandList7* InUploadCommandList);
+
+		static bool CreateSRVHeapForTextures(std::vector<RSRSharedTexture2DPtr> InTextures, ID3D12Device10* InDevice, l_ComPtr<ID3D12DescriptorHeap>& InOutSrvheap)
+		{ return CreateSRVHeapForTextures(0, (UINT)InTextures.size(), InTextures, InDevice, InOutSrvheap); }
+		static bool CreateSRVHeapForTextures(UINT InStartIndex, UINT InNbTextures, std::vector<RSRSharedTexture2DPtr> InTextures, ID3D12Device10* InDevice, l_ComPtr<ID3D12DescriptorHeap>& InOutSrvheap);
+		static bool CreateSRVHeapForTextures(UINT InNbTextures, RSRTexture2D** InTextures, ID3D12Device10* InDevice, l_ComPtr<ID3D12DescriptorHeap>& InOutSrvheap);
 	};
 #undef l_ComPtr
 }

@@ -56,12 +56,64 @@ RSRTexture2D::RSRTexture2D(const std::filesystem::path& InImagePath)
 	}
 }
 
+RSRush::RSRTexture2D::RSRTexture2D(Microsoft::WRL::ComPtr<ID3D12Resource2> InLoadedGPUResource, const ImageLoader::ImageData& InData)
+	: m_textureData(InData), m_uploadBuffer(), m_textureBuffer(InLoadedGPUResource)
+{
+}
+
 RSRTexture2D::~RSRTexture2D()
 {
 	bool bSucess = FreeAllBuffers();
 }
 
-bool RSRTexture2D::UploadResources(UINT InStartIndex, UINT InNbTextures, std::vector<RSRSharedTexture2DPtr> InTextures, ID3D12Device10* InDevice, ID3D12GraphicsCommandList7* InUploadCommandList, Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>& InOutSrvheap)
+bool RSRush::RSRTexture2D::CreateSRVHeapForTextures(UINT InNbTextures, RSRTexture2D** InTextures, ID3D12Device10* InDevice, Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>& InOutSrvheap)
+{
+	// -- Descriptor Heap for Texture(s) --
+	D3D12_DESCRIPTOR_HEAP_DESC dhd =
+	{
+		.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
+		.NumDescriptors = InNbTextures,
+		.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE,
+		.NodeMask = 0
+	};
+
+	////// Create Descriptor Heap for Table of SRVs //////
+	//Create Table for Texture SRVs
+	HRESULT result = InDevice->CreateDescriptorHeap(&dhd, IID_PPV_ARGS(&InOutSrvheap));
+	if (FAILED(result)) { RSRLog::LogError(TEXT("Cannot create texture Descriptor Heaps !"), result); return false; }
+
+	//Create CPU view handles
+	D3D12_CPU_DESCRIPTOR_HANDLE firstHandle = InOutSrvheap->GetCPUDescriptorHandleForHeapStart();
+	UINT handleSize = InDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+	for (UINT i = 0; i < InNbTextures; ++i)
+	{
+		RSRTexture2D* texture = *(InTextures + i);
+
+
+		//Compute Descriptor Handle in srvArray
+		texture->m_cpuDescriptorHandle = firstHandle;
+		texture->m_cpuDescriptorHandle.ptr += (i * handleSize);
+
+		// --SRVs for textures --
+		D3D12_SHADER_RESOURCE_VIEW_DESC srv = {
+			.Format = texture->m_textureData.giPixelFormat,
+			.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D,
+			.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING,
+			.Texture2D = {
+				.MostDetailedMip = 0,
+				.MipLevels = 1,
+				.PlaneSlice = 0,
+				.ResourceMinLODClamp = 0.0f
+			}
+		};
+		InDevice->CreateShaderResourceView(texture->m_textureBuffer.Get(), &srv, texture->m_cpuDescriptorHandle);
+	}
+
+	return true;
+}
+
+bool RSRTexture2D::UploadResources(UINT InStartIndex, UINT InNbTextures, std::vector<RSRSharedTexture2DPtr> InTextures, ID3D12Device10* InDevice, ID3D12GraphicsCommandList7* InUploadCommandList)
 {
 	RSRTexture2D** texturePtrs = new RSRTexture2D*[InNbTextures];
 	UINT effectiveCount = 0;
@@ -77,19 +129,41 @@ bool RSRTexture2D::UploadResources(UINT InStartIndex, UINT InNbTextures, std::ve
 	bool bSuccessful = effectiveCount > 0;
 	if (bSuccessful)
 	{
-		bSuccessful = RSRTexture2D::UploadResources(effectiveCount, texturePtrs, InDevice, InUploadCommandList, InOutSrvheap);
+		bSuccessful = RSRTexture2D::UploadResources(effectiveCount, texturePtrs, InDevice, InUploadCommandList);
 	}
 	delete[] texturePtrs;
 	return bSuccessful;
 }
 
-bool RSRTexture2D::UploadResources(ID3D12Device10* InDevice, ID3D12GraphicsCommandList7* InUploadCommandList, ComPtr<ID3D12DescriptorHeap>& InOutSrvheap)
+bool RSRush::RSRTexture2D::CreateSRVHeapForTextures(UINT InStartIndex, UINT InNbTextures, std::vector<RSRSharedTexture2DPtr> InTextures, ID3D12Device10* InDevice, Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>& InOutSrvheap)
 {
-	RSRTexture2D* thisPtr = this;
-	return RSRTexture2D::UploadResources(1, { &thisPtr }, InDevice, InUploadCommandList, InOutSrvheap);
+	RSRTexture2D** texturePtrs = new RSRTexture2D * [InNbTextures];
+	UINT effectiveCount = 0;
+	for (UINT i = InStartIndex; (i - InStartIndex) < InNbTextures; ++i)
+	{
+		if (InTextures[i])
+		{
+			texturePtrs[effectiveCount] = InTextures[i].get();
+			++effectiveCount;
+		}
+	}
+
+	bool bSuccessful = effectiveCount > 0;
+	if (bSuccessful)
+	{
+		bSuccessful = RSRTexture2D::CreateSRVHeapForTextures(effectiveCount, texturePtrs, InDevice, InOutSrvheap);
+	}
+	delete[] texturePtrs;
+	return bSuccessful;
 }
 
-bool RSRush::RSRTexture2D::UploadResources(UINT InNbTextures, RSRTexture2D** InTextures, ID3D12Device10* InDevice, ID3D12GraphicsCommandList7* InUploadCommandList, ComPtr<ID3D12DescriptorHeap>& InOutSrvheap)
+bool RSRTexture2D::UploadResources(ID3D12Device10* InDevice, ID3D12GraphicsCommandList7* InUploadCommandList)
+{
+	RSRTexture2D* thisPtr = this;
+	return RSRTexture2D::UploadResources(1, { &thisPtr }, InDevice, InUploadCommandList);
+}
+
+bool RSRush::RSRTexture2D::UploadResources(UINT InNbTextures, RSRTexture2D** InTextures, ID3D12Device10* InDevice, ID3D12GraphicsCommandList7* InUploadCommandList)
 {
 	UINT spaceIndex = 0;
 
@@ -113,14 +187,6 @@ bool RSRush::RSRTexture2D::UploadResources(UINT InNbTextures, RSRTexture2D** InT
 	hpDefault.CreationNodeMask = 0;
 	hpDefault.VisibleNodeMask = 0;
 
-	// -- Descriptor Heap for Texture(s) --
-	D3D12_DESCRIPTOR_HEAP_DESC dhd = 
-	{
-		.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
-		.NumDescriptors = InNbTextures,
-		.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE,
-		.NodeMask = 0
-	};
 
 
 	HRESULT result;
@@ -177,11 +243,7 @@ bool RSRush::RSRTexture2D::UploadResources(UINT InNbTextures, RSRTexture2D** InT
 	if (FAILED(result)) { RSRLog::LogError(TEXT("Cannot create texture Upload Buffer !"), result); return false; }
 
 
-	////// Create Descriptor Heap for Table of SRVs //////
 
-	//Create Table for Texture SRVs
-	result = InDevice->CreateDescriptorHeap(&dhd, IID_PPV_ARGS(&InOutSrvheap));
-	if (FAILED(result)) { RSRLog::LogError(TEXT("Cannot create texture Descriptor Heaps !"), result); return false; }
 
 
 	////// Copy Texture to Upload Buffer | Create one SRV per texture and place it in reserved DescriptorHeap table //////
@@ -192,9 +254,6 @@ bool RSRush::RSRTexture2D::UploadResources(UINT InNbTextures, RSRTexture2D** InT
 	firstTextureOfArray->m_uploadBuffer->Map(0, &uploadRange, (void**)&uploadBufferAdress);
 	size_t currentTextureStartCopyPosition = 0;
 
-	//Create CPU view handles
-	D3D12_CPU_DESCRIPTOR_HANDLE firstHandle = InOutSrvheap->GetCPUDescriptorHandleForHeapStart();
-	UINT handleSize = InDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 	for (UINT i = 0; i < InNbTextures; ++i)
 	{
@@ -204,25 +263,6 @@ bool RSRush::RSRTexture2D::UploadResources(UINT InNbTextures, RSRTexture2D** InT
 		uint32_t textureSize = texture->m_textureData.GetTotalBytes();
 		memcpy(&uploadBufferAdress[currentTextureStartCopyPosition], texture->m_textureData.data.data(), textureSize);
 		currentTextureStartCopyPosition += textureSize;
-
-
-		//Compute Descriptor Handle in srvArray
-		texture->m_cpuDescriptorHandle = firstHandle;
-		texture->m_cpuDescriptorHandle.ptr += (i * handleSize);
-
-		// --SRVs for textures --
-		D3D12_SHADER_RESOURCE_VIEW_DESC srv = {
-			.Format = texture->m_textureData.giPixelFormat,
-			.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D,
-			.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING,
-			.Texture2D = {
-				.MostDetailedMip = 0,
-				.MipLevels = 1,
-				.PlaneSlice = 0,
-				.ResourceMinLODClamp = 0.0f
-			}
-		};
-		InDevice->CreateShaderResourceView(texture->m_textureBuffer.Get(), &srv, texture->m_cpuDescriptorHandle);
 
 	};
 	firstTextureOfArray->m_uploadBuffer->Unmap(0, &uploadRange);

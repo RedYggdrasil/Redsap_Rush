@@ -86,7 +86,7 @@ bool RSRVoxalGrid::FillPlaneInfos(RSRVoxalPlane* InOutVoxalPlane, const int32_t 
 	}
 
 	ESurfaceDirection dir = InOutVoxalPlane->GetDirection();
-	XMINT3 dirIncr = DIRECTION(dir);
+	XMINT3 dirIncr = DIRECTION_2D_TO_3D_INCREMENT(dir);
 
 	for (const XMINT2& coord : *InOutVoxalPlane)
 	{

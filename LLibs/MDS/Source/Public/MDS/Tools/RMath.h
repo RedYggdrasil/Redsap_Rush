@@ -197,6 +197,105 @@ namespace mds
 		using type = int32_t;
 	};
 
+	/// ToFloat ///
+	template<typename T>
+	struct TypeLookupTNumericalAggrToFloat {
+		using type = void;
+	};
+	template<>
+	struct TypeLookupTNumericalAggrToFloat<DirectX::XMINT4> {
+		using type = DirectX::XMFLOAT4;
+	};
+	template<>
+	struct TypeLookupTNumericalAggrToFloat<DirectX::XMINT3> {
+		using type = DirectX::XMFLOAT3;
+	};
+	template<>
+	struct TypeLookupTNumericalAggrToFloat<DirectX::XMINT2> {
+		using type = DirectX::XMFLOAT2;
+	};
+
+
+	template<typename TNumericalXY>
+	inline constexpr typename TypeLookupTNumericalAggrToFloat<TNumericalXY>::type ToFloat2(const TNumericalXY& InNum2) {
+		return typename TypeLookupTNumericalAggrToFloat<TNumericalXY>::type
+		{
+			(typename TypeLookupTNumericalAggrToUnderlying<typename TypeLookupTNumericalAggrToFloat<TNumericalXY>::type>::type)InNum2.x,
+			(typename TypeLookupTNumericalAggrToUnderlying<typename TypeLookupTNumericalAggrToFloat<TNumericalXY>::type>::type)InNum2.y
+		};
+	};
+
+	template<typename TNumericalXYZ>
+	inline constexpr typename TypeLookupTNumericalAggrToFloat<TNumericalXYZ>::type ToFloat3(const TNumericalXYZ& InNum3) {
+		return typename TypeLookupTNumericalAggrToFloat<TNumericalXYZ>::type
+		{ 
+			(typename TypeLookupTNumericalAggrToUnderlying<typename TypeLookupTNumericalAggrToFloat<TNumericalXYZ>::type>::type)InNum3.x,
+			(typename TypeLookupTNumericalAggrToUnderlying<typename TypeLookupTNumericalAggrToFloat<TNumericalXYZ>::type>::type)InNum3.y, 
+			(typename TypeLookupTNumericalAggrToUnderlying<typename TypeLookupTNumericalAggrToFloat<TNumericalXYZ>::type>::type)InNum3.z 
+		};
+	};
+
+	template<typename TNumericalXYZW>
+	inline constexpr typename TypeLookupTNumericalAggrToFloat<TNumericalXYZW>::type ToFloat4(const TNumericalXYZW& InNum4) {
+		return typename TypeLookupTNumericalAggrToFloat<TNumericalXYZW>::type
+		{
+			(typename TypeLookupTNumericalAggrToUnderlying<typename TypeLookupTNumericalAggrToFloat<TNumericalXYZW>::type>::type)InNum4.x,
+			(typename TypeLookupTNumericalAggrToUnderlying<typename TypeLookupTNumericalAggrToFloat<TNumericalXYZW>::type>::type)InNum4.y,
+			(typename TypeLookupTNumericalAggrToUnderlying<typename TypeLookupTNumericalAggrToFloat<TNumericalXYZW>::type>::type)InNum4.z,
+			(typename TypeLookupTNumericalAggrToUnderlying<typename TypeLookupTNumericalAggrToFloat<TNumericalXYZW>::type>::type)InNum4.w
+		};
+	};
+
+
+	/// ToInt ///
+	template<typename T>
+	struct TypeLookupTNumericalAggrToInt {
+		using type = void;
+	};
+	template<>
+	struct TypeLookupTNumericalAggrToInt<DirectX::XMFLOAT4> {
+		using type = DirectX::XMINT4;
+	};
+	template<>
+	struct TypeLookupTNumericalAggrToInt<DirectX::XMFLOAT3> {
+		using type = DirectX::XMINT3;
+	};
+	template<>
+	struct TypeLookupTNumericalAggrToInt<DirectX::XMFLOAT2> {
+		using type = DirectX::XMINT2;
+	};
+
+
+	template<typename TNumericalXY>
+	inline constexpr typename TypeLookupTNumericalAggrToInt<TNumericalXY>::type ToInt2(const TNumericalXY& InNum2) {
+		return typename TypeLookupTNumericalAggrToInt<TNumericalXY>::type
+		{
+			(typename TypeLookupTNumericalAggrToUnderlying<typename TypeLookupTNumericalAggrToInt<TNumericalXY>::type>::type)InNum2.x,
+			(typename TypeLookupTNumericalAggrToUnderlying<typename TypeLookupTNumericalAggrToInt<TNumericalXY>::type>::type)InNum2.y
+		};
+	};
+
+	template<typename TNumericalXYZ>
+	inline constexpr typename TypeLookupTNumericalAggrToInt<TNumericalXYZ>::type ToInt3(const TNumericalXYZ& InNum3) {
+		return typename TypeLookupTNumericalAggrToInt<TNumericalXYZ>::type
+		{
+			(typename TypeLookupTNumericalAggrToUnderlying<typename TypeLookupTNumericalAggrToInt<TNumericalXYZ>::type>::type)InNum3.x,
+			(typename TypeLookupTNumericalAggrToUnderlying<typename TypeLookupTNumericalAggrToInt<TNumericalXYZ>::type>::type)InNum3.y,
+			(typename TypeLookupTNumericalAggrToUnderlying<typename TypeLookupTNumericalAggrToInt<TNumericalXYZ>::type>::type)InNum3.z
+		};
+	};
+
+	template<typename TNumericalXYZW>
+	inline constexpr typename TypeLookupTNumericalAggrToInt<TNumericalXYZW>::type ToInt4(const TNumericalXYZW& InNum4) {
+		return typename TypeLookupTNumericalAggrToInt<TNumericalXYZW>::type
+		{
+			(typename TypeLookupTNumericalAggrToUnderlying<typename TypeLookupTNumericalAggrToInt<TNumericalXYZW>::type>::type)InNum4.x,
+			(typename TypeLookupTNumericalAggrToUnderlying<typename TypeLookupTNumericalAggrToInt<TNumericalXYZW>::type>::type)InNum4.y,
+			(typename TypeLookupTNumericalAggrToUnderlying<typename TypeLookupTNumericalAggrToInt<TNumericalXYZW>::type>::type)InNum4.z,
+			(typename TypeLookupTNumericalAggrToUnderlying<typename TypeLookupTNumericalAggrToInt<TNumericalXYZW>::type>::type)InNum4.w
+		};
+	};
+
 
 	/// XYZ to XY ///
 	template<typename T>
@@ -285,6 +384,18 @@ namespace mds
 	{
 		return { InLeft.x * InRight, InLeft.y * InRight };
 	}
+
+	template<typename TNumericalXY>
+	inline constexpr TNumericalXY unoptimized_divide2(const TNumericalXY& InLeft, const TNumericalXY& InRight)
+	{
+		return { InLeft.x / InRight.x, InLeft.y / InRight.y };
+	}
+
+	template<typename TNumericalXY>
+	inline constexpr TNumericalXY unoptimized_divide2(const TNumericalXY& InLeft, const typename TypeLookupTNumericalAggrToUnderlying<TNumericalXY>::type InRight)
+	{
+		return { InLeft.x / InRight, InLeft.y / InRight };
+	}
 #pragma endregion
 
 
@@ -329,6 +440,17 @@ namespace mds
 	{
 		return { InLeft.x * InScale, InLeft.y * InScale, InLeft.z * InScale };
 	}
+	template<typename TNumericalXYZ>
+	inline constexpr TNumericalXYZ unoptimized_divide3(const TNumericalXYZ& InLeft, const TNumericalXYZ& InRight)
+	{
+		return { InLeft.x / InRight.x, InLeft.y / InRight.y, InLeft.z / InRight.z };
+	}
+
+	template<typename TNumericalXYZ>
+	inline constexpr TNumericalXYZ unoptimized_divide3(const TNumericalXYZ& InLeft, const typename TypeLookupTNumericalAggrToUnderlying<TNumericalXYZ>::type InScale)
+	{
+		return { InLeft.x / InScale, InLeft.y / InScale, InLeft.z / InScale };
+	}
 #pragma endregion
 
 #pragma region Num4
@@ -371,6 +493,18 @@ namespace mds
 	inline constexpr TNumericalXYZW unoptimized_multiply4(const TNumericalXYZW& InLeft, const typename TypeLookupTNumericalAggrToUnderlying<TNumericalXYZW>::type InScale)
 	{
 		return { InLeft.x * InScale, InLeft.y * InScale, InLeft.z * InScale, InLeft.w * InScale };
+	}
+
+	template<typename TNumericalXYZW>
+	inline constexpr TNumericalXYZW unoptimized_divide4(const TNumericalXYZW& InLeft, const TNumericalXYZW& InRight)
+	{
+		return { InLeft.x / InRight.x, InLeft.y / InRight.y, InLeft.z / InRight.z, InLeft.w / InRight.w };
+	}
+
+	template<typename TNumericalXYZW>
+	inline constexpr TNumericalXYZW unoptimized_divide4(const TNumericalXYZW& InLeft, const typename TypeLookupTNumericalAggrToUnderlying<TNumericalXYZW>::type InScale)
+	{
+		return { InLeft.x / InScale, InLeft.y / InScale, InLeft.z / InScale, InLeft.w / InScale };
 	}
 #pragma endregion
 };

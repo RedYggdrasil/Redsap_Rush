@@ -29,7 +29,11 @@ bool DXContext::Init()
     {
         return false;
     }
-    if (!InitUploadQueue())
+    if (!InitAsyncUploadQueue())
+    {
+        return false;
+    }
+    if (!InitFrameUploadQueue())
     {
         return false;
     }
@@ -43,7 +47,8 @@ bool DXContext::Init()
 void DXContext::Shutdown()
 {
     ShutdownRenderQueue();
-    ShutdownUploadQueue();
+    ShutdownFrameUploadQueue();
+    ShutdownAsyncUploadQueue();
     m_device.Reset();
     m_factory.Reset();
 }
@@ -81,20 +86,20 @@ void DXContext::ExecuteRenderCommandList()
     SignalRenderAndWait();
 }
 
-UINT64 DXContext::ReportAddedUploadTask()
+UINT64 DXContext::ReportAddedAsyncUploadTask()
 {
     m_bHasUploadTask = true; 
-    return m_uploadFenceValue + 1;
+    return m_asyncUploadFenceValue + 1;
 }
 
-UINT64 DXContext::UpdateUploadCommandQueueState(double InDeltaTime)
+UINT64 DXContext::UpdateAsyncUploadCommandQueueState(double InDeltaTime)
 {
     ZoneScoped;
     UINT64 CurrentFence = 0;
-    if (!m_uploadCmdList) { return CurrentFence; }
+    if (!m_asyncUploadCmdList) { return CurrentFence; }
 
-    CurrentFence = m_uploadFence->GetCompletedValue();
-    if (CurrentFence < m_uploadFenceValue)
+    CurrentFence = m_asyncUploadFence->GetCompletedValue();
+    if (CurrentFence < m_asyncUploadFenceValue)
     {
         //Currently Uploading
         return CurrentFence;
@@ -103,9 +108,41 @@ UINT64 DXContext::UpdateUploadCommandQueueState(double InDeltaTime)
 
     if (m_bHasUploadTask)
     {
-        StartUpload();
+        StartAsyncUpload();
     }
     return CurrentFence;
+}
+
+ID3D12GraphicsCommandList7* DXContext::InitFrameUploadList()
+{
+    m_frameUploadCmdAllocator->Reset();
+    m_frameUploadCmdList->Reset(m_frameUploadCmdAllocator.Get(), nullptr);
+    return m_frameUploadCmdList.Get();
+}
+
+void DXContext::SignalFrameUploadAndWait()
+{
+    m_frameUploadCmdQueue->Signal(m_frameUploadFence.Get(), ++m_frameUploadFenceValue);
+    if (SUCCEEDED(m_frameUploadFence->SetEventOnCompletion(m_frameUploadFenceValue, m_frameUploadFenceEvent)))
+    {
+        if (WaitForSingleObject(m_frameUploadFenceEvent, 20000) != WAIT_OBJECT_0)
+        {
+            std::exit(-1);
+        }
+    }
+    else
+    {
+        std::exit(-1);
+    }
+}
+
+void DXContext::ExecuteFrameUploadCommandList()
+{
+    ZoneScoped;
+    m_frameUploadCmdList->Close();
+    ID3D12CommandList* lists[] = { m_frameUploadCmdList.Get() };
+    m_frameUploadCmdQueue->ExecuteCommandLists(1, lists);
+    SignalFrameUploadAndWait();
 }
 
 bool DXContext::InitRenderQueue()
@@ -141,49 +178,83 @@ bool DXContext::InitRenderQueue()
     return true;
 }
 
-bool DXContext::InitUploadQueue()
+bool DXContext::InitAsyncUploadQueue()
 {
-    D3D12_COMMAND_QUEUE_DESC uploadCmdQueueDesc{};
-    uploadCmdQueueDesc.Type = D3D12_COMMAND_LIST_TYPE_COPY;// D3D12_COMMAND_LIST_TYPE_DIRECT;
-    uploadCmdQueueDesc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL;// D3D12_COMMAND_QUEUE_PRIORITY_HIGH;
-    uploadCmdQueueDesc.NodeMask = 0;
-    uploadCmdQueueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_DISABLE_GPU_TIMEOUT; //D3D12_COMMAND_QUEUE_FLAG_DISABLE_GPU_TIMEOUT ?
-    if (FAILED(m_device->CreateCommandQueue(&uploadCmdQueueDesc, IID_PPV_ARGS(&m_uploadCmdQueue))))
+    D3D12_COMMAND_QUEUE_DESC asyncUploadCmdQueueDesc{};
+    asyncUploadCmdQueueDesc.Type = D3D12_COMMAND_LIST_TYPE_COPY;// D3D12_COMMAND_LIST_TYPE_DIRECT;
+    asyncUploadCmdQueueDesc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL;// D3D12_COMMAND_QUEUE_PRIORITY_HIGH;
+    asyncUploadCmdQueueDesc.NodeMask = 0;
+    asyncUploadCmdQueueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_DISABLE_GPU_TIMEOUT; //D3D12_COMMAND_QUEUE_FLAG_DISABLE_GPU_TIMEOUT ?
+    if (FAILED(m_device->CreateCommandQueue(&asyncUploadCmdQueueDesc, IID_PPV_ARGS(&m_asyncUploadCmdQueue))))
     {
         return false;
     }
-    if (FAILED(m_device->CreateFence(m_uploadFenceValue, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_uploadFence))))
+    if (FAILED(m_device->CreateFence(m_asyncUploadFenceValue, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_asyncUploadFence))))
     {
         return false;
     }
-    m_uploadFenceEvent = CreateEvent(nullptr, false, false, nullptr);
-    if (m_uploadFenceEvent == nullptr)
-    {
-        return false;
-    }
-
-    if (FAILED(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_COPY, IID_PPV_ARGS(&m_uploadCmdAllocator[0]))))
-    {
-        return false;
-    }
-    if (FAILED(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_COPY, IID_PPV_ARGS(&m_uploadCmdAllocator[1]))))
+    m_asyncUploadFenceEvent = CreateEvent(nullptr, false, false, nullptr);
+    if (m_asyncUploadFenceEvent == nullptr)
     {
         return false;
     }
 
-    if (FAILED(m_device->CreateCommandList1(0, D3D12_COMMAND_LIST_TYPE_COPY, D3D12_COMMAND_LIST_FLAG_NONE, IID_PPV_ARGS(&m_uploadCmdList[0]))))
+    if (FAILED(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_COPY, IID_PPV_ARGS(&m_asyncUploadCmdAllocator[0]))))
     {
         return false;
     }
-    if (FAILED(m_device->CreateCommandList1(0, D3D12_COMMAND_LIST_TYPE_COPY, D3D12_COMMAND_LIST_FLAG_NONE, IID_PPV_ARGS(&m_uploadCmdList[1]))))
+    if (FAILED(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_COPY, IID_PPV_ARGS(&m_asyncUploadCmdAllocator[1]))))
     {
         return false;
     }
 
-    m_uploadCmdAllocator[0]->Reset();
-    m_uploadCmdList[0]->Reset(m_uploadCmdAllocator[0].Get(), nullptr);
+    if (FAILED(m_device->CreateCommandList1(0, D3D12_COMMAND_LIST_TYPE_COPY, D3D12_COMMAND_LIST_FLAG_NONE, IID_PPV_ARGS(&m_asyncUploadCmdList[0]))))
+    {
+        return false;
+    }
+    if (FAILED(m_device->CreateCommandList1(0, D3D12_COMMAND_LIST_TYPE_COPY, D3D12_COMMAND_LIST_FLAG_NONE, IID_PPV_ARGS(&m_asyncUploadCmdList[1]))))
+    {
+        return false;
+    }
+
+    m_asyncUploadCmdAllocator[0]->Reset();
+    m_asyncUploadCmdList[0]->Reset(m_asyncUploadCmdAllocator[0].Get(), nullptr);
     //Allocator and CmdList[1] Are not Reset because they will be after the first StartUpload
     //So reseting them first there would then cause an issue then
+    return true;
+}
+
+bool DXContext::InitFrameUploadQueue()
+{
+    D3D12_COMMAND_QUEUE_DESC frameUploadCmdQueueDesc{};
+    frameUploadCmdQueueDesc.Type = D3D12_COMMAND_LIST_TYPE_COPY;// D3D12_COMMAND_LIST_TYPE_DIRECT;
+    frameUploadCmdQueueDesc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_HIGH;// D3D12_COMMAND_QUEUE_PRIORITY_HIGH;
+    frameUploadCmdQueueDesc.NodeMask = 0;
+    frameUploadCmdQueueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_DISABLE_GPU_TIMEOUT; //D3D12_COMMAND_QUEUE_FLAG_DISABLE_GPU_TIMEOUT ?
+    if (FAILED(m_device->CreateCommandQueue(&frameUploadCmdQueueDesc, IID_PPV_ARGS(&m_frameUploadCmdQueue))))
+    {
+        return false;
+    }
+    if (FAILED(m_device->CreateFence(m_frameUploadFenceValue, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_frameUploadFence))))
+    {
+        return false;
+    }
+    m_frameUploadFenceEvent = CreateEvent(nullptr, false, false, nullptr);
+    if (m_frameUploadFenceEvent == nullptr)
+    {
+        return false;
+    }
+
+    if (FAILED(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_COPY, IID_PPV_ARGS(&m_frameUploadCmdAllocator))))
+    {
+        return false;
+    }
+
+    if (FAILED(m_device->CreateCommandList1(0, D3D12_COMMAND_LIST_TYPE_COPY, D3D12_COMMAND_LIST_FLAG_NONE, IID_PPV_ARGS(&m_frameUploadCmdList))))
+    {
+        return false;
+    }
+
     return true;
 }
 
@@ -199,34 +270,46 @@ void DXContext::ShutdownRenderQueue()
     m_renderCmdQueue.Reset();
 }
 
-void DXContext::ShutdownUploadQueue()
+void DXContext::ShutdownAsyncUploadQueue()
 {
-    m_uploadCmdList[1].Reset();
-    m_uploadCmdList[0].Reset();
-    m_uploadCmdAllocator[1].Reset();
-    m_uploadCmdAllocator[0].Reset();
-    if (m_uploadFenceEvent)
+    m_asyncUploadCmdList[1].Reset();
+    m_asyncUploadCmdList[0].Reset();
+    m_asyncUploadCmdAllocator[1].Reset();
+    m_asyncUploadCmdAllocator[0].Reset();
+    if (m_asyncUploadFenceEvent)
     {
-        CloseHandle(m_uploadFenceEvent);
+        CloseHandle(m_asyncUploadFenceEvent);
     }
-    m_uploadFence.Reset();
-    m_uploadCmdQueue.Reset();
+    m_asyncUploadFence.Reset();
+    m_asyncUploadCmdQueue.Reset();
 }
 
-bool DXContext::StartUpload()
+void DXContext::ShutdownFrameUploadQueue()
+{
+    m_frameUploadCmdList.Reset();
+    m_frameUploadCmdAllocator.Reset();
+    if (m_frameUploadFenceEvent)
+    {
+        CloseHandle(m_frameUploadFenceEvent);
+    }
+    m_frameUploadFence.Reset();
+    m_frameUploadCmdQueue.Reset();
+}
+
+bool DXContext::StartAsyncUpload()
 {
     //Start Upload of currently recording list
-    m_uploadCmdList[GetRecordingUpldListIndex()]->Close();
-    ID3D12CommandList* uploadLists[] = { m_uploadCmdList[GetRecordingUpldListIndex()].Get() };
-    m_uploadCmdQueue->ExecuteCommandLists(1, uploadLists);
+    m_asyncUploadCmdList[GetRecordingUpldListIndex()]->Close();
+    ID3D12CommandList* uploadLists[] = { m_asyncUploadCmdList[GetRecordingUpldListIndex()].Get() };
+    m_asyncUploadCmdQueue->ExecuteCommandLists(1, uploadLists);
 
-    if (FAILED(m_uploadCmdQueue->Signal(m_uploadFence.Get(), ++m_uploadFenceValue)))
+    if (FAILED(m_asyncUploadCmdQueue->Signal(m_asyncUploadFence.Get(), ++m_asyncUploadFenceValue)))
     {
         return false;
     }
     //Set previously uploading (or yet unitialized) list&allocator back to record state
-    m_uploadCmdAllocator[GetRecordingUpldListIndex()]->Reset();
-    m_uploadCmdList[GetRecordingUpldListIndex()]->Reset(m_uploadCmdAllocator[GetRecordingUpldListIndex()].Get(), nullptr);
+    m_asyncUploadCmdAllocator[GetRecordingUpldListIndex()]->Reset();
+    m_asyncUploadCmdList[GetRecordingUpldListIndex()]->Reset(m_asyncUploadCmdAllocator[GetRecordingUpldListIndex()].Get(), nullptr);
 
     m_bHasUploadTask = false;
 

@@ -105,8 +105,8 @@ void RSRush::RSRTrench::SetStartPositionData(double InStartProgression, const Di
 	m_startDirection = InStartDirection;
 }
 
-RSRush::RSRTrench::RSRTrench()
-: RSRIPhysicalEntity(), m_bThreadedInitializationCompleted(false), m_mainMesh(), m_instanceID(s_nextInstanceID)
+RSRush::RSRTrench::RSRTrench(RSRTrenchManager* InTrenchManager)
+: RSRIPhysicalEntity(), m_trenchManager(InTrenchManager), m_bThreadedInitializationCompleted(false), m_mainMesh(), m_instanceID(s_nextInstanceID)
 {
 	++s_nextInstanceID;
 }

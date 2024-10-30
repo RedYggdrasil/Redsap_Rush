@@ -150,6 +150,10 @@ namespace mds
 				DirectX::XMFLOAT3 DepthAxis; //Should be the normal ?
 				std::shared_ptr<RGMemoryTree> MemoryTreeRoot;
 				//std::unordered_map<RVoxelSurface*, std::weak_ptr<RGMemoryTree>> surfaceToMemory;
+				std::vector<uint16_t> SideGreedbleTextureIDs;
+				std::vector<uint16_t> TopGreedbleTextureIDs;
+				std::uniform_int_distribution<uint16_t> Dist_SideGreedbleTextureIDs;
+				std::uniform_int_distribution<uint16_t> Dist_TopGreedbleTextureIDs;
 			};
 		private :
 			TVertexProvider m_vertexProvider;
@@ -159,7 +163,13 @@ namespace mds
 			RGreeble(const TVertexProvider& InVertexProvider)
 			:m_vertexProvider(InVertexProvider), mp_context(nullptr){ };
 
-			void Generate(std::mt19937_64&& InGenerator, RVoxelSurface&& InPlane, const DirectX::XMFLOAT4X4& InPlaneToModelSpace, const DirectX::XMFLOAT3& InPlaneExtrusionDir, const bool bInFaceClockwise, std::vector<TVertex>& InOutVertices, std::vector<TUintVertIdx>& InOutTirangles);
+			void Generate
+			(
+				std::mt19937_64&& InGenerator, RVoxelSurface&& InPlane, const DirectX::XMFLOAT4X4& InPlaneToModelSpace, 
+				const DirectX::XMFLOAT3& InPlaneExtrusionDir, const bool bInFaceClockwise, 
+				const std::vector<uint16_t>& InSideGreedbleTextureIDs, const std::vector<uint16_t>& InTopGreedbleTextureIDs,
+				std::vector<TVertex>& InOutVertices, std::vector<TUintVertIdx>& InOutTirangles
+			);
 			void GreebleSurface(SPMemTree InParent)
 			{
 				SubdivideSurfaceByTileGrowth(InParent);

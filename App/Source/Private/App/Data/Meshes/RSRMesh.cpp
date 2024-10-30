@@ -191,7 +191,7 @@ bool RSRush::RSRMesh::UploadResources(ID3D12Device10* InDevice, ID3D12GraphicsCo
     return true;
 }
 
-bool RSRush::RSRMesh::DrawMesh(ID3D12GraphicsCommandList7* InUploadCommandList) const
+bool RSRush::RSRMesh::DrawMesh(ID3D12GraphicsCommandList7* InUploadCommandList, const UINT InInstanceCount) const
 {
     D3D12_VERTEX_BUFFER_VIEW vbv
     {
@@ -211,16 +211,16 @@ bool RSRush::RSRMesh::DrawMesh(ID3D12GraphicsCommandList7* InUploadCommandList) 
             .Format = DXGI_FORMAT_RVRTX_IDX
         };
         InUploadCommandList->IASetIndexBuffer(&ibv);
-        InUploadCommandList->DrawIndexedInstanced(this->GetIndexCount(), 1, 0, 0, 0);
+        InUploadCommandList->DrawIndexedInstanced(this->GetIndexCount(), InInstanceCount, 0, 0, 0);
     }
     else
     {
-        InUploadCommandList->DrawInstanced(this->GetVertexCount(), 1, 0, 0);
+        InUploadCommandList->DrawInstanced(this->GetVertexCount(), InInstanceCount, 0, 0);
     }
     return true;
 }
 
-bool RSRush::RSRMesh::DrawMesh(ID3D12GraphicsCommandList7* InUploadCommandList, const RSRTransformMatrix& InPinnedTransformMatrix) const
+bool RSRush::RSRMesh::DrawMesh(ID3D12GraphicsCommandList7* InUploadCommandList, const RSRTransformMatrix& InPinnedTransformMatrix, const UINT InInstanceCount) const
 {
     //will this return temp ?
     if (m_bApplyTransformationMatrix)
@@ -240,5 +240,5 @@ bool RSRush::RSRMesh::DrawMesh(ID3D12GraphicsCommandList7* InUploadCommandList, 
 
         InUploadCommandList->SetGraphicsRoot32BitConstants(0, MVPDLC::S32B_INV_MOD_MAT, &StoredInverseTranspose, MVPDLC::O32B_INV_MOD_MAT);
     }
-    return DrawMesh(InUploadCommandList);
+    return DrawMesh(InUploadCommandList, InInstanceCount);
 }

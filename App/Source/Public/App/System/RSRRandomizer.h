@@ -14,6 +14,10 @@ namespace RSRush
 		inline static bool GetIsInitialized() { return mp_inst; }
 		inline static const RSRRandomizer& Get() { return *static_cast<RSRRandomizer*>(mp_inst); }
 	public:
+		inline std::mt19937_64 CreateTrenchManagerGenerator() const
+		{
+			return std::mt19937_64(uint64_t((312 << 16) ^ m_seed));
+		}
 		inline std::mt19937_64 GetTrenchGenerator(const uint64_t InTrenchID) const
 		{ return std::mt19937_64(uint64_t((InTrenchID << 16) ^ m_seed)); }
 	};

@@ -35,6 +35,8 @@ namespace mds
 		const RTransform& GetTransform() const { return m_transform; };
 		void SetTransform(const RTransform& InTransform);
 		const DirectX::XMFLOAT4X4& GetMatrix() const { return m_model; }
+		DirectX::XMFLOAT4X4 ComputeInverseTranspose() const;
+		DirectX::XMFLOAT4X4 ComputeInverseTransposeAtOrigin() const;
 
 
 		void SetPositon(const DirectX::XMFLOAT3& InPosition);

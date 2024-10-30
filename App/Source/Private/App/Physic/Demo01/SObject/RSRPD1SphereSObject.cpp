@@ -4,25 +4,26 @@
 #include <DirectXMath.h>
 #include "MDS/Tools/RMath.h"
 #include "App/Geometry/RSRBasicShapes.h"
+#include "App/SceneObject/RSROScene.h"
 #include "App/Tools/RSRLog.h"
 
 using namespace RSRush;
 using namespace DirectX;
 
-RSRush::RSRPD1SphereSObject::RSRPD1SphereSObject(const RSRTransform& InTransform, const RSRColBehavior& InColBehavior, const bool InbHasDynamics)
-:RSRSObject(mds::RAssetAuthority::None, true), RSRIPhysicalEntity(), m_colBehavior(InColBehavior), m_hasDynamics(InbHasDynamics)
+RSRush::RSRPD1SphereSObject::RSRPD1SphereSObject(InstanceDatas&& InInstanceData, const RSRTransform& InTransform, const RSRColBehavior& InColBehavior, const bool InbHasDynamics)
+:RSRSObject(mds::RAssetAuthority::None, true), RSRIPhysicalEntity(), m_colBehavior(InColBehavior), m_hasDynamics(InbHasDynamics), m_instanceData(std::move(InInstanceData))
 {
 	m_mainTransform.SetTransform(InTransform);
 	m_mainMesh = RSRBasicShapes::Get().GetDefSphere();
 }
 
-RSRush::RSRPD1SphereSObject::RSRPD1SphereSObject(const RSRTransform& InTransform)
-:RSRPD1SphereSObject(InTransform, RSRPD1SphereSObject::DEFAULT_COL_BEHAVIOR, RSRPD1SphereSObject::bDEFAULT_HAS_DYNAMICS)
+RSRush::RSRPD1SphereSObject::RSRPD1SphereSObject(InstanceDatas&& InInstanceData, const RSRTransform& InTransform)
+:RSRPD1SphereSObject(std::move(InInstanceData), InTransform, RSRPD1SphereSObject::DEFAULT_COL_BEHAVIOR, RSRPD1SphereSObject::bDEFAULT_HAS_DYNAMICS)
 {
 }
 
-RSRPD1SphereSObject::RSRPD1SphereSObject()
-:RSRPD1SphereSObject(mds::TRS_IDENTITY, RSRPD1SphereSObject::DEFAULT_COL_BEHAVIOR, RSRPD1SphereSObject::bDEFAULT_HAS_DYNAMICS)
+RSRPD1SphereSObject::RSRPD1SphereSObject(InstanceDatas&& InInstanceData)
+:RSRPD1SphereSObject(std::move(InInstanceData), mds::TRS_IDENTITY, RSRPD1SphereSObject::DEFAULT_COL_BEHAVIOR, RSRPD1SphereSObject::bDEFAULT_HAS_DYNAMICS)
 {}
 
 RSRPD1SphereSObject::~RSRPD1SphereSObject()
@@ -68,6 +69,38 @@ void RSRush::RSRPD1SphereSObject::OnAddedToScene(std::weak_ptr<RSRSObject> InThi
 		{
 			this->SetSelfReference(_thisPtr);
 			RSRush::RSRPhysicManager::Get().AddPhysicalEntity(this->GeneratePhysicBody());
+			if (std::shared_ptr<RSROScene> lockedScene = InScene.lock())
+			{
+				lockedScene->RegisterInstancedMesheHolder(/*should be this*/_thisPtr.get(), m_mainMesh);
+				if (!m_hasDynamics)
+				{
+					RSRTransformMatrix NoTranslationMatrix = m_mainTransform;
+					NoTranslationMatrix.SetPositon(DirectX::XMFLOAT3(0.f, 0.f, 0.f));
+
+					DirectX::XMMATRIX TransformMatrix = DirectX::XMLoadFloat4x4(&NoTranslationMatrix.GetMatrix());
+					DirectX::XMMATRIX InverseTranspose = mds::RMath::InverseTranspose(TransformMatrix);
+
+					DirectX::XMFLOAT4X4  StoredInverseTranspose;
+					DirectX::XMStoreFloat4x4(&StoredInverseTranspose, InverseTranspose);
+
+					m_vertexBufferDatas.insert_or_assign
+					(
+						reinterpret_cast<uintptr_t>(m_mainMesh.get()),
+						std::vector<RSRush::VertexBufferInstanceData>
+					{
+						VertexBufferInstanceData
+						{
+							.ModelMatrixes = InstanceModelMatrixes
+							{
+								.ModMat = m_mainTransform.GetMatrix(),
+								.InvProjModMat = StoredInverseTranspose
+							},
+							.Datas = m_instanceData
+						}
+					}
+					);
+				}
+			}
 		}
 	}
 }
@@ -80,6 +113,10 @@ void RSRush::RSRPD1SphereSObject::OnRemovedFromScene(std::weak_ptr<RSRSObject> I
 		if (_thisPtr)
 		{
 			RSRush::RSRPhysicManager::Get().RemovePhysicalEntity(this->GetEditKey());
+			if (std::shared_ptr<RSROScene> lockedScene = InScene.lock())
+			{
+				lockedScene->UnregisterInstancedMesheHolder(/*should be this*/_thisPtr.get(), m_mainMesh);
+			}
 		}
 	}
 }
@@ -90,6 +127,32 @@ bool RSRush::RSRPD1SphereSObject::LateTickSync(const double InGameTime, const do
 	if (m_hasDynamics && GetKey().bHasBeenRegistered)
 	{
 		m_mainTransform = this->GetLastResolvedPhysicBody().Transform;
+		
+		RSRTransformMatrix NoTranslationMatrix = m_mainTransform;
+		NoTranslationMatrix.SetPositon(DirectX::XMFLOAT3(0.f, 0.f, 0.f));
+
+		DirectX::XMMATRIX TransformMatrix = DirectX::XMLoadFloat4x4(&NoTranslationMatrix.GetMatrix());
+		DirectX::XMMATRIX InverseTranspose = mds::RMath::InverseTranspose(TransformMatrix);
+
+		DirectX::XMFLOAT4X4  StoredInverseTranspose;
+		DirectX::XMStoreFloat4x4(&StoredInverseTranspose, InverseTranspose);
+		
+		m_vertexBufferDatas.insert_or_assign
+		(
+			reinterpret_cast<uintptr_t>(m_mainMesh.get()),
+			std::vector<RSRush::VertexBufferInstanceData>
+			{
+				VertexBufferInstanceData
+				{
+					.ModelMatrixes = InstanceModelMatrixes
+					{
+						.ModMat = m_mainTransform.GetMatrix(),
+						.InvProjModMat = StoredInverseTranspose
+					},
+					.Datas = m_instanceData
+				}
+			}
+		);
 	}
 	return bAllSucessfull;
 }
