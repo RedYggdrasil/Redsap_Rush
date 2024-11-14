@@ -1,5 +1,6 @@
 #pragma once
 
+#include "MDS/Tools/System/IRProgramMemNode.h"
 #include "App/Data/Physic/RSRPhysicContext.h"
 #include "App/Gameplay/Scene/RSRSceneInstancedMeshes.h"
 #include <memory>
@@ -8,12 +9,10 @@ namespace RSRush
 {
 	class GameManager;
 	class RSRProgramInstance;
-	class RSRScene
+	class RSRScene : public mds::IRProgramMemNode
 	{
 	protected:
 		bool m_bIsLoaded;
-		std::weak_ptr<RSRScene> m_thisWPtr;
-		RSRProgramInstance* m_programInstance;
 		std::shared_ptr<GameManager> m_gameManager;
 		RSRPhysicContext m_physicContext = PhysicContext::DEFAULT_EARTH;
 
@@ -63,11 +62,10 @@ public:\
 	struct Constructor\
 	{\
 	private:\
-		static std::shared_ptr<SceneClass>Create(RSRush::RSRProgramInstance* InProgramInstance)\
+		static std::shared_ptr<SceneClass>Create(RSRProgramInstance* InProgramInstance)\
 		{\
 			std::shared_ptr<SceneClass> scene = std::make_shared<SceneClass>(Private());\
-			scene->m_programInstance = InProgramInstance;\
-			scene->m_thisWPtr = scene;\
+			scene->InitMemNode(InProgramInstance, scene);\
 			return scene;\
 		};\
 		friend class RSRProgramInstance;\

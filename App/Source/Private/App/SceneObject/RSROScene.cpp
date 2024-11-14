@@ -32,7 +32,7 @@ bool RSRush::RSROScene::LateTickSync(const double InGameTime, const double InDel
 std::weak_ptr<RSRush::RSRSObject> RSRush::RSROScene::AddNewSObject_inner(std::shared_ptr<RSRush::RSRSObject>&& InNewSObject)
 {
 	std::weak_ptr<RSRush::RSRSObject> returnValue;
-	if (!m_thisWPtr.expired() && InNewSObject)
+	if (!m_WPtrSelfNode.expired() && InNewSObject)
 	{
 		m_sObjects.push_back(std::move(InNewSObject));
 		std::shared_ptr<RSRush::RSRSObject>& addedObject = m_sObjects.back();
@@ -58,7 +58,7 @@ void RSRush::RSROScene::RemoveSObject(std::shared_ptr<RSRush::RSRSObject> InSObj
 		if (InSObjectToRemove)
 		{
 			std::weak_ptr<RSROScene> _thisOScenePtr;
-			if (!m_thisWPtr.expired())
+			if (!m_WPtrSelfNode.expired())
 			{
 				_thisOScenePtr = ThisOScenePtr();
 			}

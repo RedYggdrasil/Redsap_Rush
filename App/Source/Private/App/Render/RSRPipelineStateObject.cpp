@@ -16,14 +16,15 @@ RSRush::RSRPipelineStateObject::RSRPipelineStateObject(RSRProgramInstance* InPro
 {
 	bool bAllSucessfull = true;
 	bAllSucessfull = m_programInstance && bAllSucessfull;
-	HRESULT result = DXContext::Get().GetDevice()->CreateRootSignature(0, m_rootSigShader->GetBuffer(), m_rootSigShader->GetSize(), IID_PPV_ARGS(&m_rootSig));
+	
+	HRESULT result = m_programInstance->GetDXContect()->GetDevice()->CreateRootSignature(0, m_rootSigShader->GetBuffer(), m_rootSigShader->GetSize(), IID_PPV_ARGS(&m_rootSig));
 	bAllSucessfull = SUCCEEDED(result) && bAllSucessfull;
 	m_bIsCorrectlyLoaded = bAllSucessfull;
 }
 
 bool RSRush::RSRPipelineStateObject::CreatePSO()
 {
-	HRESULT result = DXContext::Get().GetDevice()->CreateGraphicsPipelineState(&m_pipelineStateDesc, IID_PPV_ARGS(&m_pso));
+	HRESULT result = m_programInstance->GetDXContect()->GetDevice()->CreateGraphicsPipelineState(&m_pipelineStateDesc, IID_PPV_ARGS(&m_pso));
 	m_bIsCorrectlyLoaded = SUCCEEDED(result) && m_bIsCorrectlyLoaded;
 	return SUCCEEDED(result);
 }

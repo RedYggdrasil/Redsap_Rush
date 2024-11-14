@@ -11,40 +11,39 @@ set (MDS_PRIVTE_SRC "Source/Private/${MDS_NAME}/")
 set(MDS_SOURCES
 	${MDS_PUBLIC_SRC}Hello.h						${MDS_PRIVTE_SRC}Hello.cpp
 	${MDS_PUBLIC_SRC}RTool.h						${MDS_PRIVTE_SRC}RTool.cpp
-	${MDS_PUBLIC_SRC}Tools/RTransform.h				${MDS_PRIVTE_SRC}Tools/RTransform.cpp
-	${MDS_PUBLIC_SRC}Algorithm/RVoxelSurface.h		${MDS_PRIVTE_SRC}Algorithm/RVoxelSurface.cpp
 	${MDS_PUBLIC_SRC}Algorithm/RGreeble.h			${MDS_PUBLIC_SRC}Algorithm/RGreebleImpls.h ${MDS_PRIVTE_SRC}Algorithm/RGreeble.cpp
 	${MDS_PUBLIC_SRC}Algorithm/RGreedyMesh.h		${MDS_PRIVTE_SRC}Algorithm/RGreedyMesh.cpp
+	${MDS_PUBLIC_SRC}Algorithm/RVoxelSurface.h		${MDS_PRIVTE_SRC}Algorithm/RVoxelSurface.cpp
 	${MDS_PUBLIC_SRC}Defines/MDS.h					${MDS_PRIVTE_SRC}Defines/MDS.cpp
+	${MDS_PUBLIC_SRC}DirectXTK12/SimpleMath.h		${MDS_PRIVTE_SRC}DirectXTK12/SimpleMath.cpp			${MDS_PUBLIC_SRC}DirectXTK12/SimpleMath.inl
 	${MDS_PUBLIC_SRC}Threads/RTaskManager.h			${MDS_PRIVTE_SRC}Threads/RTaskManager.cpp
 	${MDS_PUBLIC_SRC}Threads/RTask.h				${MDS_PRIVTE_SRC}Threads/RTask.cpp
 	${MDS_PUBLIC_SRC}Threads/RTaskFunction.h		${MDS_PRIVTE_SRC}Threads/RTaskFunction.cpp
-	${MDS_PUBLIC_SRC}Tools/REnum.h					${MDS_PRIVTE_SRC}Tools/REnum.cpp
-	${MDS_PUBLIC_SRC}Tools/Templates/Singleton.h	${MDS_PRIVTE_SRC}Tools/Templates/Singleton.cpp
+	${MDS_PUBLIC_SRC}Tools/Assets/RAsset.h			${MDS_PRIVTE_SRC}Tools/Assets/RAsset.cpp
+	${MDS_PUBLIC_SRC}Tools/Assets/RAssetType.h		${MDS_PRIVTE_SRC}Tools/Assets/RAssetType.cpp
+	${MDS_PUBLIC_SRC}Tools/Math/RMath2D.h			${MDS_PRIVTE_SRC}Tools/Math/RMath2D.cpp
+	${MDS_PUBLIC_SRC}Tools/Pins/RAssetPin.h			${MDS_PRIVTE_SRC}Tools/Pins/RAssetPin.cpp
+	${MDS_PUBLIC_SRC}Tools/Pins/RID3D12RPin.h		${MDS_PRIVTE_SRC}Tools/Pins/RID3D12RPin.cpp
+	${MDS_PUBLIC_SRC}Tools/RAllocator.h				${MDS_PRIVTE_SRC}Tools/RAllocator.cpp
 	${MDS_PUBLIC_SRC}Tools/RCollection.h			${MDS_PRIVTE_SRC}Tools/RCollection.cpp
-	${MDS_PUBLIC_SRC}Tools/RMathCollection.h		${MDS_PRIVTE_SRC}Tools/RMathCollection.cpp
+	${MDS_PUBLIC_SRC}Tools/RCoordinate.h			${MDS_PRIVTE_SRC}Tools/RCoordinate.cpp
+	${MDS_PUBLIC_SRC}Tools/REnum.h					${MDS_PRIVTE_SRC}Tools/REnum.cpp
 	${MDS_PUBLIC_SRC}Tools/RIterators.h				${MDS_PRIVTE_SRC}Tools/RIterators.cpp
 	${MDS_PUBLIC_SRC}Tools/RLog.h					${MDS_PRIVTE_SRC}Tools/RLog.cpp
 	${MDS_PUBLIC_SRC}Tools/RMath.h					${MDS_PRIVTE_SRC}Tools/RMath.cpp
-	${MDS_PUBLIC_SRC}Tools/Math/RMath2D.h			${MDS_PRIVTE_SRC}Tools/Math/RMath2D.cpp
+	${MDS_PUBLIC_SRC}Tools/RMathCollection.h		${MDS_PRIVTE_SRC}Tools/RMathCollection.cpp
 	${MDS_PUBLIC_SRC}Tools/RPin.h					${MDS_PRIVTE_SRC}Tools/RPin.cpp
 	${MDS_PUBLIC_SRC}Tools/RResourceStateType.h		${MDS_PRIVTE_SRC}Tools/RResourceStateType.cpp
-	
+	${MDS_PUBLIC_SRC}Tools/RTransform.h				${MDS_PRIVTE_SRC}Tools/RTransform.cpp
 	${MDS_PUBLIC_SRC}Tools/System/RKeyCodes.h		${MDS_PRIVTE_SRC}Tools/System/RKeyCodes.cpp
 	${MDS_PUBLIC_SRC}Tools/System/RInputKeys.h		${MDS_PRIVTE_SRC}Tools/System/RInputKeys.cpp
 	${MDS_PUBLIC_SRC}Tools/System/RTimekeeper.h		${MDS_PRIVTE_SRC}Tools/System/RTimekeeper.cpp
 	${MDS_PUBLIC_SRC}Tools/System/RRandomizer.h		${MDS_PRIVTE_SRC}Tools/System/RRandomizer.cpp
-	
-	${MDS_PUBLIC_SRC}Tools/Assets/RAssetType.h		${MDS_PRIVTE_SRC}Tools/Assets/RAssetType.cpp
-	${MDS_PUBLIC_SRC}Tools/Assets/RAsset.h			${MDS_PRIVTE_SRC}Tools/Assets/RAsset.cpp
-	
-	${MDS_PUBLIC_SRC}Tools/Pins/RID3D12RPin.h		${MDS_PRIVTE_SRC}Tools/Pins/RID3D12RPin.cpp
-	${MDS_PUBLIC_SRC}Tools/Pins/RAssetPin.h			${MDS_PRIVTE_SRC}Tools/Pins/RAssetPin.cpp
-	${MDS_PUBLIC_SRC}Tools/RCoordinate.h			${MDS_PRIVTE_SRC}Tools/RCoordinate.cpp
-	${MDS_PUBLIC_SRC}Tools/RAllocator.h				${MDS_PRIVTE_SRC}Tools/RAllocator.cpp
-	
-	${MDS_PUBLIC_SRC}DirectXTK12/SimpleMath.h		${MDS_PRIVTE_SRC}DirectXTK12/SimpleMath.cpp			${MDS_PUBLIC_SRC}DirectXTK12/SimpleMath.inl
-	
+
+	${MDS_PUBLIC_SRC}Tools/System/IRProgramMemNode.h	${MDS_PRIVTE_SRC}Tools/System/IRProgramMemNode.cpp
+	${MDS_PUBLIC_SRC}Tools/System/IRProgramRoot.h		${MDS_PRIVTE_SRC}Tools/System/IRProgramRoot.cpp
+
+	${MDS_PUBLIC_SRC}Tools/Templates/Singleton.h	${MDS_PRIVTE_SRC}Tools/Templates/Singleton.cpp
 )
 
 create_non_existing("${MDS_SOURCES}" "${CMAKE_CURRENT_SOURCE_DIR}" ${MDS_NAME})

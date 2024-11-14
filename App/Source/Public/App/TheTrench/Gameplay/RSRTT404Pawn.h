@@ -8,6 +8,7 @@
 
 namespace RSRush
 {
+	class RSRTextureLibrary;
 	class RSRTT404Pawn : public Pawn, public RSRIPhysicalEntity
 	{
 		static constexpr INT32	PLAYER_DEFAULT_MAX_HEALTH = 3;
@@ -119,6 +120,9 @@ namespace RSRush
 		void SetMouseFrameMouvement(const DirectX::XMFLOAT2& InMouseFrameMouvement, double InDeltaTime);
 
 		virtual void OnInputFrameEnded() override;
+
+		virtual void OnAddedToScene(std::weak_ptr<RSRSObject> InThisWPtr, std::weak_ptr<RSROScene> InScene);
+		virtual void OnRemovedFromScene(std::weak_ptr<RSRSObject> InThisWPtr, std::weak_ptr<RSROScene> InScene);
 		virtual bool LateTickSync(const double InGameTime, const double InDeltaTime) override;
 
 		inline float GetPawnProgression() const { return m_CameraData.Position.x; }
@@ -132,7 +136,7 @@ namespace RSRush
 		DirectX::XMVECTOR XM_CALLCONV ComputePointerWorldLocation(const float InDepth = 10.f) const;
 
 	public:
-		void GenerateMesh();
+		void GenerateMesh(RSRTextureLibrary* InTextureLibrary);
 		virtual bool UploadResources(struct ID3D12Device10* InDevice, struct ID3D12GraphicsCommandList7* InUploadCommandList) override;
 		virtual bool FreeUploadBuffers() override;
 		virtual bool FreeResourceBuffers() override;
@@ -144,7 +148,7 @@ namespace RSRush
 		RSRPhysicBody GeneratePhysicBody() const;
 	public:
 		//Implemented via RSRIPhysicalEntity
-		virtual void OnPhysicalPrePass(double InDeltaTime) override;
+		virtual void OnPhysicalPrePass(RSRPhysicManager* InPhysicManager, double InDeltaTime) override;
 		virtual void OnOverlapWith(RSRIPhysicalEntity* InOther) override;
 	};
 }

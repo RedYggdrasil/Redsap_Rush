@@ -81,7 +81,7 @@ namespace RSRush
 	
 	public:
 		//Trenches do not move for now, so neither does their colliders
-		virtual void OnPhysicalPrePass(double InDeltaTime) override { RSRIPhysicalEntity::OnPhysicalPrePass(InDeltaTime); }
+		virtual void OnPhysicalPrePass(RSRPhysicManager* InPhysicManager, double InDeltaTime) override { RSRIPhysicalEntity::OnPhysicalPrePass(InPhysicManager, InDeltaTime); }
 	
 
 		static constexpr RSRVoxelRectangle BASIC_UNDER_VOLUME = 

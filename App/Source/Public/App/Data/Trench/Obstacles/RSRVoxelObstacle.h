@@ -10,8 +10,9 @@ namespace RSRush
 {
 	struct RSRVoxelRectangle;
 	struct RSRCollidersBodyLWPair;
-	class RSRVoxalGrid;
+	class RSRPhysicManager;
 	struct RSRCollidersBody;
+	class RSRVoxalGrid;
 	class RSRVoxalPlane;
 	class RSRVoxelObstacle
 	{
@@ -51,8 +52,8 @@ namespace RSRush
 		void ClearPlacementData();
 		bool HasPlacementData() const { return m_apd.lp_loadedTRSMatrix; }
 	public:
-		virtual bool AttemptPlacement(std::mt19937_64& InOutGenerator, RSRVoxalGrid& InOutGrid, const RSRush::RSRTransformMatrix& InTransformMatrix, const RSRVoxelRectangle& InSpawnArea, uint8_t InMaxAttemptCount = 10) R_PURE;
-		bool AttemptPlacement(std::mt19937_64& InOutGenerator, RSRVoxalGrid& InOutGrid, const RSRush::RSRTransformMatrix& InTransformMatrix, uint8_t InMaxAttemptCount = 10);
+		virtual bool AttemptPlacement(RSRPhysicManager* InPhysicManager, std::mt19937_64& InOutGenerator, RSRVoxalGrid& InOutGrid, const RSRush::RSRTransformMatrix& InTransformMatrix, const RSRVoxelRectangle& InSpawnArea, uint8_t InMaxAttemptCount = 10) R_PURE;
+		bool AttemptPlacement(RSRPhysicManager* InPhysicManager, std::mt19937_64& InOutGenerator, RSRVoxalGrid& InOutGrid, const RSRush::RSRTransformMatrix& InTransformMatrix, uint8_t InMaxAttemptCount = 10);
 	
 		virtual bool FillVoxalGridData(RSRVoxalGrid& InOutGrid) R_PURE;
 		virtual bool FillVoxalPlanes(std::vector<RSRVoxalPlane>& InOutVoxalPlanes) R_PURE;
@@ -62,7 +63,7 @@ namespace RSRush
 		static RSRVoxelObstacle* HeapCreateNewObstacle(std::mt19937_64* InOutGenerator);
 		static RSRVoxelObstacle* HeapCreateNewObstacle(const EObstacleType InType);
 	protected:
-		bool AvalableVoxelSpace(const RSRVoxelRectangle& InVoxelSpace);
+		bool AvalableVoxelSpace(RSRPhysicManager* InPhysicManager, const RSRVoxelRectangle& InVoxelSpace);
 
 	};
 }

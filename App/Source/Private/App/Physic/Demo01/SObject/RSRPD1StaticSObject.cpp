@@ -15,7 +15,8 @@ RSRush::RSRPD1StaticSObject::RSRPD1StaticSObject(InstanceDatas&& InInstanceData,
 :RSRSObject(mds::RAssetAuthority::None, true), RSRIPhysicalEntity(), m_colBehavior(InColBehavior), m_hasDynamics(InbHasDynamics), m_instanceData(std::move(InInstanceData))
 {
 	m_mainTransform.SetTransform(InTransform);
-	m_mainMesh = RSRBasicShapes::Get().GetDefSquare();
+	//At this point RSRPD1StaticSObject is not yet registered memTree element, cannot acess basic shapes
+	m_mainMesh = nullptr;
 }
 
 RSRush::RSRPD1StaticSObject::RSRPD1StaticSObject(InstanceDatas&& InInstanceData, const RSRTransform& InTransform)
@@ -30,13 +31,17 @@ RSRPD1StaticSObject::RSRPD1StaticSObject(InstanceDatas&& InInstanceData)
 
 void RSRush::RSRPD1StaticSObject::OnAddedToScene(std::weak_ptr<RSRSObject> InThisWPtr, std::weak_ptr<RSROScene> InScene)
 {
+	RSRSObject::OnAddedToScene(InThisWPtr, InScene);
+	//At this point RSRPD1StaticSObject is registered memTree element
+	m_mainMesh = RSRBasicShapes::Get(this)->GetDefSquare();
+
 	if (!InThisWPtr.expired())
 	{
 		std::shared_ptr<RSRPD1StaticSObject> _thisPtr = std::dynamic_pointer_cast<RSRPD1StaticSObject>(InThisWPtr.lock());
 		if (_thisPtr)
 		{
 			this->SetSelfReference(_thisPtr);
-			RSRush::RSRPhysicManager::Get().AddPhysicalEntity(this->GeneratePhysicBody());
+			RSRush::RSRPhysicManager::Get(this)->AddPhysicalEntity(this->GeneratePhysicBody());
 			if (std::shared_ptr<RSROScene> lockedScene = InScene.lock())
 			{
 				lockedScene->RegisterInstancedMesheHolder(/*should be this*/_thisPtr.get(), m_mainMesh);
@@ -80,13 +85,14 @@ void RSRush::RSRPD1StaticSObject::OnRemovedFromScene(std::weak_ptr<RSRSObject> I
 		std::shared_ptr<RSRPD1StaticSObject> _thisPtr = std::dynamic_pointer_cast<RSRPD1StaticSObject>(InThisWPtr.lock());
 		if (_thisPtr)
 		{
-			RSRush::RSRPhysicManager::Get().RemovePhysicalEntity(this->GetEditKey());
+			RSRush::RSRPhysicManager::Get(this)->RemovePhysicalEntity(this->GetEditKey());
 			if (std::shared_ptr<RSROScene> lockedScene = InScene.lock())
 			{
 				lockedScene->UnregisterInstancedMesheHolder(/*should be this*/_thisPtr.get(), m_mainMesh);
 			}
 		}
 	}
+	RSRSObject::OnRemovedFromScene(InThisWPtr, InScene);
 }
 
 RSRPD1StaticSObject::~RSRPD1StaticSObject()
@@ -160,9 +166,9 @@ bool RSRush::RSRPD1StaticSObject::LateTickSync(const double InGameTime, const do
 	return bAllSucessfull;
 }
 
-void RSRush::RSRPD1StaticSObject::OnPhysicalPrePass(double InDeltaTime)
+void RSRush::RSRPD1StaticSObject::OnPhysicalPrePass(RSRPhysicManager* InPhysicManager, double InDeltaTime)
 {
-	RSRIPhysicalEntity::OnPhysicalPrePass(InDeltaTime);
+	RSRIPhysicalEntity::OnPhysicalPrePass(InPhysicManager, InDeltaTime);
 }
 
 void RSRush::RSRPD1StaticSObject::OnOverlapWith(RSRIPhysicalEntity* InOther)

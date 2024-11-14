@@ -1,11 +1,17 @@
 #pragma once
 
 #include <stdint.h>
+#include <filesystem>
 #include <string>
 #include <string_view>
 namespace mds
 {
-	constexpr const char* DYNAMIC_ASSET_PATH = "ResevedDynamicAsset/";
+	constexpr const char* DYNAMIC_ASSET_FOLDER_NAME = "ResevedDynamicAsset";
+
+	extern const std::filesystem::path DYNAMIC_ASSET_PATH;
+	extern const std::string DYNAMIC_ASSET_PATH_NAME;
+	extern const std::string_view DYNAMIC_ASSET_PATH_NAME_VIEW;
+
 	enum class RAssetType : uint8_t
 	{
 		Unknown = 0,

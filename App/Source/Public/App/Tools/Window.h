@@ -1,12 +1,14 @@
 #pragma once
 
 #include "App/Libs/WinInclude.h"
+#include "MDS/Tools/System/IRProgramMemNode.h"
 //#include "App/Tools/ComPointer.hpp"
 #include "directxmath.h"
 
 #include <vector>
 #include <memory>
 #include <wrl/client.h>
+#include <unordered_map>
 
 namespace DXWindowDefaults
 {
@@ -30,12 +32,12 @@ namespace RSRush
 {
 	class IInputListener;
 	class RSRUserInput;
+	class RSRProgramInstance;
 }
-class DXWindow
+class DXWindow : public mds::IRProgramMemElem
 {
 private:
-	static DXWindow Instance;
-
+	static std::unordered_map<HWND, DXWindow*> sm_dxWindowLookup;
 protected:
 	bool m_bUseVerticalSync = true;
 	std::vector<std::shared_ptr<RSRush::IInputListener>> m_InputListeners;
@@ -43,7 +45,10 @@ protected:
 	DirectX::XMFLOAT2 m_mouseRelativePosition;
 
 public:
-	bool Init();
+	static DXWindow* Get(mds::IRProgramMemElem* InProgramMemElem);
+	static DXWindow* Get(RSRush::RSRProgramInstance* InProgramInstance);
+public:
+	bool Init(RSRush::RSRProgramInstance* InProgramInstance);
 	void Update();
 	void Present();
 	void Shutdown();
@@ -123,10 +128,7 @@ private:
 public:
 	DXWindow(const DXWindow&) = delete;
 	DXWindow& operator=(const DXWindow&) = delete;
-	inline static DXWindow& Get()
-	{
-		return Instance;
-	}
+	DXWindow();
+	virtual ~DXWindow();
 private:
-	DXWindow() = default;
 };

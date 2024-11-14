@@ -9,11 +9,11 @@
 using namespace RSRush;
 using namespace DirectX;
 
-const RSRPPConnection RSRPPConnection::INVALID_CONNECTION = RSRPPConnection();
+const RSRPPConnection RSRPPConnection::INVALID_CONNECTION = RSRPPConnection(nullptr);
 
 std::shared_ptr<RSRPPConnection> RSRPPConnection::Create(RSRPlayerPath& OwningPath, const uint16_t InNextNodeIndex, const XMFLOAT3& InStartLocation, const XMFLOAT3& InEndLocation)
 {
-	std::shared_ptr<RSRPPConnection> r = std::make_shared<RSRPPConnection>();
+	std::shared_ptr<RSRPPConnection> r = std::make_shared<RSRPPConnection>(OwningPath.GetPhysicManager());
 	r->SetSelfReference(r);
 
 	r->NextNodeIndex = InNextNodeIndex;
@@ -47,18 +47,19 @@ std::shared_ptr<RSRPPConnection> RSRPPConnection::Create(RSRPlayerPath& OwningPa
 	XMMATRIX lMat = XMLoadFloat4x4(&result.Transform.GetMatrix());
 	result.Colliders.RecomputeWorld(lMat, true);
 
-	RSRPhysicManager::Get().AddPhysicalEntity(result);
+	
+	OwningPath.GetPhysicManager()->AddPhysicalEntity(result);
 
 	return r;
 }
 
 void RSRush::RSRPPConnection::Clean(std::shared_ptr<RSRPPConnection> InConnection)
 {
-	RSRPhysicManager::Get().RemovePhysicalEntity(InConnection->GetEditKey());
+	InConnection->m_physicManager->RemovePhysicalEntity(InConnection->GetEditKey());
 }
 
-RSRPPConnection::RSRPPConnection()
-:RSRIPhysicalEntity(), NextNodeIndex(UINT16_MAX)
+RSRPPConnection::RSRPPConnection(RSRPhysicManager* InPhysicManager)
+:RSRIPhysicalEntity(), m_physicManager(InPhysicManager), NextNodeIndex(UINT16_MAX)
 {
 }
 

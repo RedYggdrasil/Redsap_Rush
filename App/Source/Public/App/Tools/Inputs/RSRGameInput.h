@@ -2,7 +2,8 @@
 
 #define NOMINMAX
 #include "MDS/Tools/REnum.h"
-#include "MDS/Tools/Templates/Singleton.h"
+#include "MDS/Tools/System/IRProgramMemNode.h"
+
 
 
 #include <GameInput.h>
@@ -13,6 +14,7 @@
 struct IGameInput;
 namespace RSRush
 {
+	class RSRProgramInstance;
 	namespace NSGameInput
 	{
 		class RSRXInputOverrideData
@@ -51,13 +53,17 @@ namespace RSRush
 			RSRDeviceOverrideData DeviceOverride = RSRDeviceOverrideData();
 		};
 	}
-	class RSRGameInput : public mds::Singleton<RSRGameInput>
+	class RSRGameInput : public mds::IRProgramMemElem
 	{
 	private:
 		class IRSRUserInputProvider* m_userProvider = nullptr;
 	private:
+		static uintptr_t ms_nextInputcallbackLookupKey;
+		static std::unordered_map<GameInputCallbackToken, RSRGameInput*> sm_dxGameInputLookup;
+
 		Microsoft::WRL::ComPtr<IGameInput> m_GameInput;
-		uint64_t m_inputCallbackToken;
+		uintptr_t m_inputcallbackLookupKey;
+		GameInputCallbackToken m_inputCallbackToken;
 
 		bool m_bGameInputAvalable = false;
 
@@ -69,7 +75,7 @@ namespace RSRush
 		RSRGameInput(const RSRGameInput&) = delete;
 		RSRGameInput& operator=(const RSRGameInput&) = delete;
 	public:
-		bool Init(IRSRUserInputProvider* InUserProvider = nullptr);
+		bool Init(RSRProgramInstance* InProgramInstance, IRSRUserInputProvider* InUserProvider = nullptr);
 		inline void SetUserProvider(IRSRUserInputProvider* InUserProvider) { m_userProvider = InUserProvider; };
 		void Shutdown();
 		void Update(const double InDeltaTime);
@@ -82,7 +88,7 @@ namespace RSRush
 			_In_ GameInputDeviceStatus currentStatus,
 			_In_ GameInputDeviceStatus previousStatus
 		);
-	protected:
+	public:
 		RSRGameInput();
 	protected:
 		bool HandleGameInputReading(IGameInputReading* InGameInputReading, class RSRUserInput* InUserInput, const double InDeltaTime);
@@ -92,7 +98,5 @@ namespace RSRush
 		bool HandleGameInputGamePad(IGameInputReading* InGameInputReading, RSRUserInput* InUserInput, const double InDeltaTime, bool& bOutHasInput);
 	
 		bool HandleInputGameInputByWindowEvent(RSRUserInput* InUserInput);
-	public:
-		friend class mds::Singleton<RSRGameInput>;
 	};
 };

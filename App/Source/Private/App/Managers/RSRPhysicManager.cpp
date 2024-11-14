@@ -1,5 +1,6 @@
 #include "App/Managers/RSRPhysicManager.h"
 #include "App/Tools/RSRLog.h"
+#include "App/Game/RSRProgramInstance.h"
 #include "App/Geometry/RSRBasicShapes.h"
 #include "App/Managers/RSRPhysicManager_Dynamics.hpp"
 #include "App/Managers/RSRPhysicManager_Collisions.hpp"
@@ -211,7 +212,7 @@ void RSRPhysicManager::UpdatePhysic(const double InGameTime, const double InDelt
 	{
 		if (std::shared_ptr<RSRIPhysicalEntity> entity = physicalBody.Entity.lock())
 		{
-			entity->OnPhysicalPrePass(InDeltaTime);
+			entity->OnPhysicalPrePass(this, InDeltaTime);
 		}
 	}
 
@@ -275,8 +276,19 @@ void RSRush::RSRPhysicManager::LateTickSync(const double InGameTime, const doubl
 #endif
 }
 
-bool RSRPhysicManager::Init(RSRBasicShapes* InBasicShapes)
+RSRPhysicManager* RSRush::RSRPhysicManager::Get(const mds::IRProgramMemElem* InProgramMemElem)
 {
+	return InProgramMemElem->GetRoot<RSRush::RSRProgramInstance>()->GetPhysicManager();
+}
+
+RSRPhysicManager* RSRush::RSRPhysicManager::Get(RSRProgramInstance* InProgramInstance)
+{
+	return InProgramInstance->GetPhysicManager();
+}
+
+bool RSRPhysicManager::Init(RSRProgramInstance* InProgramInstance, RSRBasicShapes* InBasicShapes)
+{
+	this->InitMemElem(InProgramInstance);
 	bool allSucessfull = true;
 #if DEBUG_PHYSIC
 	if (!InBasicShapes) { return false; }
@@ -307,6 +319,7 @@ void RSRPhysicManager::Shutdown()
 	m_debugSphere.reset();
 	m_debugAABB.reset();
 #endif
+	this->ResetMemTreeData();
 }
 
 
@@ -364,7 +377,7 @@ std::vector<std::pair<size_t, size_t>> RSRPhysicManager::ComputeOverlaping()
 }
 
 RSRPhysicManager::RSRPhysicManager()
-:mds::Singleton<RSRPhysicManager>(), m_physicContext(PhysicContext::DEFAULT_EARTH)
+:mds::IRProgramMemElem(), m_physicContext(PhysicContext::DEFAULT_EARTH)
 {
 }
 

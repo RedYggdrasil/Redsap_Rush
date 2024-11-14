@@ -10,6 +10,7 @@
 #include "App/Data/Trench/RSRVoxalTrench.h"
 #include "App/Game/RSRPlayerPath.h"
 #include "App/Managers/RSRPhysicManager.h"
+#include "App/TheTrench/RSRTTScene.h"
 #include "App/Tools/RSRLog.h"
 #include "App/System/RSRRandomizer.h"
 #include <Tracy.hpp>
@@ -26,6 +27,11 @@ static const double GENERATE_PROGRESSION_DISTANCE = 30.;
 const XMFLOAT3 START_LOCATION = XMFLOAT3(0.f, 0.f, 0.f);
 const XMFLOAT3 START_DIRECTION = XMFLOAT3(1.f, 0.f, 0.f);
 
+
+RSRProgramInstance* RSRush::RSRTrenchManager::GetProgramInstance() const
+{
+	return GetRoot<RSRProgramInstance>();
+}
 
 void RSRTrenchManager::BeginNewTrench(double InCurrentProgression, std::weak_ptr<RSRPlayerPath> InPlayerPath)
 {
@@ -45,11 +51,12 @@ void RSRTrenchManager::UpdateTrench(double InDeltaTime, double InCurrentProgress
 {
 	ZoneScoped;
 	// Clean passed trenchs but always keep at least 1 Trench to keep progression
+	RSRPhysicManager* physicManager = RSRPhysicManager::Get(this);
 	while(m_segments.size() > 1 && m_segments.front()->GetEndProgression() < InCurrentProgression)
 	{
 		std::shared_ptr<RSRTrench>& front = m_segments.front();
 		front->FreeResourceBuffers();
-		RSRPhysicManager::Get().RemovePhysicalEntity(front->GetEditKey());
+		physicManager->RemovePhysicalEntity(front->GetEditKey());
 		m_segments.pop_front();
 	}
 
@@ -155,8 +162,8 @@ bool RSRush::RSRTrenchManager::DrawTrench(DirectX::XMFLOAT4 InCameraPosition, ID
 }
 
 
-RSRush::RSRTrenchManager::RSRTrenchManager(std::vector<uint16_t>&& InSideGreedbleTextureIDs, std::vector<uint16_t>&& InTopGreedbleTextureIDs)
-	:m_segments(), m_generatingSegments(), gen(RSRRandomizer::Get().CreateTrenchManagerGenerator()),
+RSRush::RSRTrenchManager::RSRTrenchManager(RSRTTScene* InOwnerScene, std::vector<uint16_t>&& InSideGreedbleTextureIDs, std::vector<uint16_t>&& InTopGreedbleTextureIDs)
+: mds::IRProgramMemNode(), m_owningScene(InOwnerScene), m_segments(), m_generatingSegments(), gen(RSRRandomizer::Get().CreateTrenchManagerGenerator()),
 	m_sideGreedbleTextureIDs(std::move(InSideGreedbleTextureIDs)), m_topGreedbleTextureIDs(std::move(InTopGreedbleTextureIDs))
 {
 }
@@ -216,8 +223,8 @@ void RSRTrenchManager::StartUploadingTrenchMesh()
 	// TODO : Start uploading m_generatingSegments
 	m_currentlyUploading = true;
 	bool bCumulativeSucess = true;
-	ID3D12Device10* device = DXContext::Get().GetDevice().Get();
-	ID3D12GraphicsCommandList7* uploadCommandList = DXContext::Get().GetAsyncUploadList();
+	ID3D12Device10* device = DXContext::Get(this)->GetDevice().Get();
+	ID3D12GraphicsCommandList7* uploadCommandList = DXContext::Get(this)->GetAsyncUploadList();
 
 	for (const auto& generatedSegment : m_generatingSegments)
 	{
@@ -231,11 +238,12 @@ void RSRTrenchManager::StartUploadingTrenchMesh()
 			RSRLog::LogWarning(TEXT(L_PATH "Unexepected behavior, elements of m_generatingSegments in RSRTrenchManager should always be in NeedUpload State !"));
 		}
 	}
-	m_waitingForUploadFence = DXContext::Get().ReportAddedAsyncUploadTask();
+	m_waitingForUploadFence = DXContext::Get(this)->ReportAddedAsyncUploadTask();
 }
 
 void RSRTrenchManager::OnUploadingTrenchMeshEnded()
 {
+	RSRPhysicManager* physicManager = RSRPhysicManager::Get(this);
 	for (size_t i = 0; i < m_generatingSegments.size(); ++i)
 	{
 		if (!m_generatingSegments[i]->FreeUploadBuffers())
@@ -245,7 +253,7 @@ void RSRTrenchManager::OnUploadingTrenchMeshEnded()
 		}
 		const std::shared_ptr<RSRTrench>& ptr = m_segments.emplace_back(m_generatingSegments[i].release());
 		ptr->SetSelfReference(ptr);
-		RSRPhysicManager::Get().AddPhysicalEntity(ptr->GeneratePhysicBody());
+		physicManager->AddPhysicalEntity(ptr->GeneratePhysicBody());
 
 	}
 	m_generatingSegments.clear();

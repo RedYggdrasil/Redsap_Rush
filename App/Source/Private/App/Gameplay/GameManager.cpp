@@ -1,6 +1,7 @@
 #include "App/Gameplay/GameManager.h"
 
 #include "App/Gameplay/PlayerController.h"
+#include "App/Gameplay/RSRScene.h"
 #include "App/Tools/Window.h"
 using namespace RSRush;
 
@@ -18,13 +19,19 @@ std::shared_ptr<RSRush::PlayerController> RSRush::GameManager::AddPlayerControll
 {
 	m_playerControllers.push_back(MakeSharedPCInstance());
 	std::shared_ptr<RSRush::PlayerController> newPC = m_playerControllers.back();
-	DXWindow::Get().AddUniqueInputListener(newPC);
+	DXWindow::Get(this)->AddUniqueInputListener(newPC);
 	return newPC;
 }
 
-void GameManager::InitializeGame(std::weak_ptr<RSRScene> InScene)
+void GameManager::InitializeGame(std::weak_ptr<RSRScene> InScene, std::weak_ptr<GameManager> InSelfWPtr)
 {
-	m_owningScene = InScene;
+	if (std::shared_ptr<RSRScene> scene = InScene.lock())
+	{
+		if (std::shared_ptr<GameManager> gameManager = InSelfWPtr.lock())
+		{
+			this->InitMemNode(scene, gameManager);
+		}
+	}
 }
 
 void GameManager::ShutdownGame()
@@ -33,7 +40,7 @@ void GameManager::ShutdownGame()
 	{
 		if (pc)
 		{
-			DXWindow::Get().RemoveInputListener(pc);
+			DXWindow::Get(this)->RemoveInputListener(pc);
 		}
 	}
 	m_playerControllers.clear();

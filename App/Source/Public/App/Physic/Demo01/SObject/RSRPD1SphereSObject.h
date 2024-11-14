@@ -33,7 +33,7 @@ namespace RSRush
 		RSRPhysicBody GeneratePhysicBody(const RSRColBehavior& InColBehavior, bool InbHasDynamics) const;
 	public:
 		//Implemented via RSRIPhysicalEntity
-		virtual void OnPhysicalPrePass(double InDeltaTime) override;
+		virtual void OnPhysicalPrePass(RSRPhysicManager* InPhysicManager, double InDeltaTime) override;
 		virtual void OnOverlapWith(RSRIPhysicalEntity* InOther) override;
 	};
 };

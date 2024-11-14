@@ -57,8 +57,9 @@ RSRTexture2D::RSRTexture2D(const std::filesystem::path& InImagePath)
 }
 
 RSRush::RSRTexture2D::RSRTexture2D(Microsoft::WRL::ComPtr<ID3D12Resource2> InLoadedGPUResource, const ImageLoader::ImageData& InData)
-	: m_textureData(InData), m_uploadBuffer(), m_textureBuffer(InLoadedGPUResource)
+	: RAsset(), m_textureData(InData), m_uploadBuffer(), m_textureBuffer(InLoadedGPUResource)
 {
+	m_resourceState = mds::RResourceStateType::ResourceLive;
 }
 
 RSRTexture2D::~RSRTexture2D()
@@ -197,7 +198,11 @@ bool RSRush::RSRTexture2D::UploadResources(UINT InNbTextures, RSRTexture2D** InT
 	{
 		RSRTexture2D* texture = *(InTextures + i);
 
-		texture->m_indexInSRVTable = i;
+		if (texture->GetTextureIndex() != (uint16_t)i)
+		{
+			RSRLog::Log(LOG_EXCEPTION, TEXT("Unexpected texture index '{}' for texture, expected index '{}' !"), i, texture->GetTextureIndex());
+		}
+		//texture->m_indexInSRVTable = i;
 		texture->m_spaceIndex = spaceIndex;
 
 		totalUploadSize += texture->m_textureData.GetTotalBytes();
@@ -218,8 +223,6 @@ bool RSRush::RSRTexture2D::UploadResources(UINT InNbTextures, RSRTexture2D** InT
 
 		result = InDevice->CreateCommittedResource(&hpDefault, D3D12_HEAP_FLAG_NONE, &rdt, D3D12_RESOURCE_STATE_COMMON, nullptr, IID_PPV_ARGS(&texture->m_textureBuffer));
 		if (FAILED(result)) { RSRLog::LogError(TEXT("Cannot upload current Texture !"), result); return false; }
-
-
 	}
 
 
@@ -311,6 +314,8 @@ bool RSRush::RSRTexture2D::UploadResources(UINT InNbTextures, RSRTexture2D** InT
 		InUploadCommandList->CopyTextureRegion(&txtcDst, 0, 0, 0, &txtcSrc, &textureSizeAsBox);
 
 		currentTextureStartCopyPosition += textureSize;
+
+		texture->m_resourceState = mds::RResourceStateType::WaitingUpload;
 	}
 
 	return true;

@@ -33,7 +33,6 @@ namespace RSRush
 		virtual bool DrawUIs(ID3D12GraphicsCommandList7* InDraw2DCommandList)  const { return true; };
 
 		Pawn(const mds::RAssetAuthority InMainMeshAuthority);
-		Pawn(const mds::RAssetAuthority InMainMeshAuthority, const bool bInIsHandledAsSObject);
 		R_VIRTUAL_IMPLICIT ~Pawn() R_OVERRIDE_IMPLICIT;
 	};
 }

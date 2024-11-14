@@ -4,7 +4,15 @@
 #include <cstdlib>
 #include <Tracy.hpp>
 
-DXContext DXContext::Instance = DXContext();
+DXContext* DXContext::Get(mds::IRProgramMemElem* InProgramMemElem)
+{
+    return InProgramMemElem->GetRoot<RSRush::RSRProgramInstance>()->GetDXContect();
+}
+
+DXContext* DXContext::Get(RSRush::RSRProgramInstance* InProgramInstance)
+{
+    return InProgramInstance->GetDXContect();
+}
 
 bool DXContext::Init()
 {
@@ -18,7 +26,7 @@ bool DXContext::Init()
     HRESULT AllowTearingResult = m_factory->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &allowTearing, sizeof(allowTearing));
     
     bool bTearingSupportedOnDevice = (bool)(SUCCEEDED(AllowTearingResult) && allowTearing);
-    RSRush::RSRProgramInstance::Get().SetTearingSupported(bTearingSupportedOnDevice);
+    GetRoot<RSRush::RSRProgramInstance>()->SetTearingSupported(bTearingSupportedOnDevice);
     if (!bTearingSupportedOnDevice)
     {
         RSRLog::Log(LOG_WARNING, TEXT("System does not allow Tearing !"), AllowTearingResult);
@@ -314,4 +322,9 @@ bool DXContext::StartAsyncUpload()
     m_bHasUploadTask = false;
 
     return true;
+}
+
+DXContext::DXContext(RSRush::RSRProgramInstance* InProgramInstance)
+: mds::IRProgramMemElem(InProgramInstance)
+{
 }

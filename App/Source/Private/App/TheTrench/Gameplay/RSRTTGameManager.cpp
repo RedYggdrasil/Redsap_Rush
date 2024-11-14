@@ -16,20 +16,20 @@ double RSRush::RSRTTGameManager::GetPrePassProgression() const
 	return 0.0;
 }
 
-void RSRTTGameManager::InitializeGame(std::weak_ptr<RSRScene> InScene)
+void RSRTTGameManager::InitializeGame(std::weak_ptr<RSRScene> InScene, std::weak_ptr<GameManager> InSelfWPtr)
 {
-	GameManager::InitializeGame(InScene);
+	GameManager::InitializeGame(InScene, InSelfWPtr);
 
 	m_playerControllers.clear();
 	AddPlayerController();
 #if _DEBUG
-	std::shared_ptr<RSRTTScene> tTScene = std::dynamic_pointer_cast<RSRTTScene>(m_owningScene.lock());
+	std::shared_ptr<RSRTTScene> tTScene = std::dynamic_pointer_cast<RSRTTScene>(InScene.lock());
 	assert((bool)tTScene && "Owning scene is a a RSRTTScene !");
 #else
-	std::shared_ptr<RSRTTScene> tTScene = std::static_pointer_cast<RSRTTScene>(m_owningScene.lock());
+	std::shared_ptr<RSRTTScene> tTScene = std::static_pointer_cast<RSRTTScene>(InScene.lock());
 #endif
 
-	m_playerPath = std::make_shared<RSRush::RSRPlayerPath>();
+	m_playerPath = std::make_shared<RSRush::RSRPlayerPath>(GetRoot<RSRProgramInstance>()->GetPhysicManager());
 	GetTTPlayerController()->PocessPawn(tTScene->GetPlayerPawn().get());
 
 	//Generate first Trench mesh

@@ -4,8 +4,9 @@
 #include "MDS/Threads/RTaskFunction.h"
 #include "MDS/Threads/RTaskManager.h"
 
-#include "App/Managers/RSRAssetManager.h"
 #include "App/Game/RSRPlayerPath.h"
+#include "App/Managers/RSRAssetManager.h"
+#include "App/Managers/RSRTrenchManager.h"
 #include "App/System/RSRRandomizer.h"
 #include "App/Tools/RSRLog.h"
 
@@ -312,7 +313,8 @@ void RSRBasicTrench::GenerateGeometry()
         });
     auto FV = [] (unsigned short InFaceIndex, unsigned short InVextexIndex) constexpr { return ((InFaceIndex * 4) + InVextexIndex); };
     
-    RSRSharedMesh3DPtr simpleTrenchMesh = RSRAssetManager::Get().AddAsset<RSRMesh3D>
+    
+    RSRSharedMesh3DPtr simpleTrenchMesh = RSRAssetManager::Get(m_trenchManager->GetProgramInstance())->AddAsset<RSRMesh3D>
         (
             mds::NameDynamicAsset(mds::RAssetType::Mesh, std::format("Trench{}_Basic", m_instanceID)),
             false,

@@ -17,6 +17,8 @@ using Microsoft::WRL::ComPtr;
 using namespace RSRush;
 using namespace RSRush::NSGameInput;
 
+uintptr_t RSRGameInput::ms_nextInputcallbackLookupKey = 0;
+std::unordered_map<GameInputCallbackToken, RSRGameInput*> RSRGameInput::sm_dxGameInputLookup;
 
 //GameInput on Windows dose not handle Xbox Controller correctly if they are connect vua bluetooth
 //https://github.com/microsoft/Xbox-GDK-Samples/issues/26
@@ -35,32 +37,42 @@ void RSRGameInput::OnDeviceEnumerated(
     _In_ GameInputDeviceStatus currentStatus,
     _In_ GameInputDeviceStatus previousStatus
 ) {
-    RSRGameInput* _this = &RSRGameInput::Get();
-    // Handle the device here
-    // For example, you can get information about the device
     if (device)
     {
-        const GameInputDeviceInfo* deviceInfo = device->GetDeviceInfo();
-        bool bIsAvalable = currentStatus & GameInputDeviceStatus::GameInputDeviceConnected;
-        bool bWasAccountedFor = _this->m_devices.contains(deviceInfo->deviceId);
+        auto it = sm_dxGameInputLookup.find((uintptr_t)context);
 
-
-        if (bIsAvalable)
+        if (it != sm_dxGameInputLookup.end())
         {
-            if (!bWasAccountedFor)
+            RSRGameInput* thisPtr = it->second;
+            const GameInputDeviceInfo* deviceInfo = device->GetDeviceInfo();
+            bool bIsAvalable = currentStatus & GameInputDeviceStatus::GameInputDeviceConnected;
+            bool bWasAccountedFor = thisPtr->m_devices.contains(deviceInfo->deviceId);
+
+
+            if (bIsAvalable)
             {
-                _this->m_devices.emplace(deviceInfo->deviceId, RSRUserDeviceInfos{ device, USER_ID_PLAYER_0 });
+                if (!bWasAccountedFor)
+                {
+                    thisPtr->m_devices.emplace(deviceInfo->deviceId, RSRUserDeviceInfos{ device, USER_ID_PLAYER_0 });
+                }
             }
-        }
-        else if (bWasAccountedFor)
-        {
-            _this->m_devices.erase(deviceInfo->deviceId);
+            else if (bWasAccountedFor)
+            {
+                thisPtr->m_devices.erase(deviceInfo->deviceId);
+            }
         }
     }
 }
 
-bool RSRGameInput::Init(IRSRUserInputProvider* InUserProvider)
+RSRush::RSRGameInput::RSRGameInput()
+: mds::IRProgramMemElem()
 {
+
+}
+
+bool RSRGameInput::Init(RSRProgramInstance* InProgramInstance, IRSRUserInputProvider* InUserProvider)
+{
+    this->InitMemElem(InProgramInstance);
     HRESULT hResult = GameInputCreate(&m_GameInput);
     if (FAILED(hResult))
     {
@@ -78,17 +90,26 @@ bool RSRGameInput::Init(IRSRUserInputProvider* InUserProvider)
         gifp = GameInputFocusPolicy::GameInputExclusiveForegroundInput;
         m_GameInput->SetFocusPolicy(gifp);
 
-        //GameInputKind::
+
+        m_inputcallbackLookupKey = ms_nextInputcallbackLookupKey;
+        ++ms_nextInputcallbackLookupKey;
+        sm_dxGameInputLookup.emplace(m_inputcallbackLookupKey, this);
+
         HRESULT _hr = m_GameInput->RegisterDeviceCallback
         (
             nullptr,
             GameInputKindKeyboard | GameInputKindMouse | GameInputKindGamepad /*| GameInputKindTouch*/,
             GameInputDeviceAnyStatus,
             GameInputBlockingEnumeration,
-            nullptr,
+            (void*)m_inputcallbackLookupKey,
             RSRGameInput::OnDeviceEnumerated,
             &m_inputCallbackToken
         );
+        if (FAILED(_hr))
+        {
+            RSRLog::Log(LOG_ERROR, TEXT("Failed to Initialize GameInput !"), _hr);
+            return false;
+        }
     }
 
     SetUserProvider(InUserProvider ? InUserProvider : nullptr);
@@ -104,7 +125,9 @@ void RSRGameInput::Shutdown()
     {
         m_GameInput->UnregisterCallback(m_inputCallbackToken, 5000Ui64);
     }
+    sm_dxGameInputLookup.erase(m_inputcallbackLookupKey);
     m_GameInput.Reset();
+    this->ResetMemTreeData();
 }
 
 void RSRGameInput::Update(const double InDeltaTime)
@@ -163,12 +186,6 @@ void RSRGameInput::Update(const double InDeltaTime)
     }
 }
 
-RSRGameInput::RSRGameInput()
-:mds::Singleton<RSRGameInput>()
-{
-
-}
-
 std::size_t RSRush::NSGameInput::APP_LOCAL_DEVICE_ID_Hash::operator()(const APP_LOCAL_DEVICE_ID& id) const
 {
     // Compute the hash from the bytes in value
@@ -208,7 +225,7 @@ bool RSRGameInput::HandleGameInputReading(IGameInputReading* InGameInputReading,
                     bHadSucess = RSRGameInput_XInput::HandleGameInputGamePad_XInput(InGameInputReading, InUserInput, InDeltaTime, /*Out*/bHasInputs) || bHadSucess;
                     if (bHasInputs)
                     {
-                        RSRProgramInstance::Get().ReportSilentGameInputController();
+                        GetRoot<RSRProgramInstance>()->ReportSilentGameInputController();
                     }
                 }
                 return bHadSucess;
@@ -221,7 +238,7 @@ bool RSRGameInput::HandleGameInputReading(IGameInputReading* InGameInputReading,
 
 bool RSRush::RSRGameInput::HandleInputGameInputByWindowEvent(RSRUserInput* InUserInput)
 {
-    InUserInput->m_axis2D[0][mds::UT_cast(EMDSAxis2DType::MDS_A2D_MS_WND_NRML)] = DXWindow::Get().GetMouseRelativePosition();
+    InUserInput->m_axis2D[0][mds::UT_cast(EMDSAxis2DType::MDS_A2D_MS_WND_NRML)] = DXWindow::Get(this)->GetMouseRelativePosition();
 
     return true;
 }

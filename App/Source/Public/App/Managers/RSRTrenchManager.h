@@ -1,6 +1,7 @@
 #pragma once
 
 #include "App/Libs/WinInclude.h"
+#include "MDS/Tools/System/IRProgramMemNode.h"
 #include "DirectXMath.h"
 #include <vector>
 #include <memory>
@@ -11,16 +12,20 @@ namespace RSRush
 {
 	class RSRTrench;
 	class RSRPlayerPath;
-	class RSRTrenchManager
+	class RSRProgramInstance;
+	class RSRTTScene;
+	class RSRTrenchManager : public mds::IRProgramMemNode
 	{
 		std::mt19937_64 gen;
 		std::vector<uint16_t> m_sideGreedbleTextureIDs;
 		std::vector<uint16_t> m_topGreedbleTextureIDs;
-		
+	private :
+		RSRTTScene* m_owningScene;
 	public:
 #pragma region Instance
 		RSRTrenchManager(const RSRTrenchManager&) = delete;
 		RSRTrenchManager& operator=(const RSRTrenchManager&) = delete;
+		RSRProgramInstance* GetProgramInstance() const;
 #pragma endregion
 
 	protected:
@@ -46,7 +51,8 @@ namespace RSRush
 	public:
 		bool DrawTrench(DirectX::XMFLOAT4 InCameraPosition, ID3D12GraphicsCommandList7* InDrawCommandList);
 	public:
-		RSRTrenchManager(std::vector<uint16_t>&& InSideGreedbleTextureIDs, std::vector<uint16_t>&& InTopGreedbleTextureIDs);
+		RSRTrenchManager(RSRTTScene* InOwnerScene, std::vector<uint16_t>&& InSideGreedbleTextureIDs, std::vector<uint16_t>&& InTopGreedbleTextureIDs);
+		using mds::IRProgramMemNode::InitMemNode;
 	private:
 		bool IsNeedToGenerateSegments(double InCurrentProgression) const;
 

@@ -48,5 +48,8 @@ namespace RSRush
 
 	public:
 		void ApplyDefaultActionBinding();
+
+		RSRTTPlayerController();
+		R_VIRTUAL_IMPLICIT ~RSRTTPlayerController() R_OVERRIDE_IMPLICIT;
 	};
 }

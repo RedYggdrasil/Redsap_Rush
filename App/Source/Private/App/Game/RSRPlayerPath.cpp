@@ -69,6 +69,11 @@ RSRPPNode RSRush::RSRPPNode::Create(const double InProgression, RSRPPNode::RSRPP
 }
 
 
+RSRush::RSRPlayerPath::RSRPlayerPath(RSRPhysicManager* InPhysicManager)
+: m_physicManager(InPhysicManager), m_pathPoints()
+{
+}
+
 bool RSRush::RSRPlayerPath::ConnectNodePoints(RSRPPNode& FromNode, const size_t InFromNodePointIndex, RSRPPNode& ToNode, const size_t InToNodePointIndex)
 {
 	if (!FromNode.IsValid() || InFromNodePointIndex >= RSRPPNode::MAX_PARALLEL_PATHS || !FromNode.PathPoints[InToNodePointIndex].IsValid())

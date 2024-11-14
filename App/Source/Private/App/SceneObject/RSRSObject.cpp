@@ -3,17 +3,15 @@
 #include <App/Tools/RSRLog.h>
 
 RSRush::RSRSObject::RSRSObject(const mds::RAssetAuthority InMainMeshAuthority)
-	: RSRSObject(InMainMeshAuthority, false, false)
+	: RSRSObject(InMainMeshAuthority, false)
 {
 }
 
-RSRush::RSRSObject::RSRSObject(const mds::RAssetAuthority InMainMeshAuthority, const bool bInIsHandledAsSObject)
-	:RSRSObject(InMainMeshAuthority, bInIsHandledAsSObject, false)
-{
-}
 
-RSRush::RSRSObject::RSRSObject(const mds::RAssetAuthority InMainMeshAuthority, const bool bInIsHandledAsSObject, const bool bInIsDrawnAsInstance)
-	:m_bIsHandledAsSObject(bInIsHandledAsSObject), m_bIsDrawnAsInstance(bInIsDrawnAsInstance), m_mainTransform(RSRush::RSRTransformMatrix(mds::TRS_IDENTITY)), m_mainMeshAuthority(InMainMeshAuthority), m_mainMesh(nullptr)
+RSRush::RSRSObject::RSRSObject(const mds::RAssetAuthority InMainMeshAuthority, const bool bInIsDrawnAsInstance)
+: mds::IRProgramMemNode(), m_bIsDrawnAsInstance(bInIsDrawnAsInstance),
+	m_mainTransform(RSRush::RSRTransformMatrix(mds::TRS_IDENTITY)), m_mainMeshAuthority(InMainMeshAuthority), 
+	m_mainMesh(nullptr)
 {
 	assert(m_mainMeshAuthority != mds::RAssetAuthority::Shared && "AssetAuthority Shared need to be designed with asset manager and temp stack shared_ptr in mind !, unhandled for now !");
 }
@@ -76,10 +74,14 @@ bool RSRush::RSRSObject::DrawGeometry(ID3D12GraphicsCommandList7* InDraw3DComman
 
 void RSRush::RSRSObject::OnAddedToScene(std::weak_ptr<RSRSObject> InThisWPtr, std::weak_ptr<RSROScene> InScene)
 {
+	//m_owningScene = InScene;
+	this->InitMemNode(InScene.lock(), InThisWPtr.lock());
 }
 
 void RSRush::RSRSObject::OnRemovedFromScene(std::weak_ptr<RSRSObject> InThisWPtr, std::weak_ptr<RSROScene> InScene)
 {
+	this->ResetMemTreeData();
+	//m_owningScene.reset();
 }
 
 mds::RResourceStateType RSRush::RSRSObject::GetResourceState() const

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "MDS/Tools/System/IRProgramMemNode.h"
+
 #include <string>
 #include <unordered_map>
 #include <memory>
@@ -12,23 +14,22 @@
 
 namespace RSRush
 {
+	class RSRProgramInstance;
 	class RSRTexture2D;
+	class RSRMesh3D;
+	class RSRTextureLibrary;
 	typedef std::weak_ptr<mds::RAsset> RSRWeakAssetPtr;
 	typedef std::shared_ptr<mds::RAsset> RSRSharedAssetPtr;
-	class RSRAssetManager
+	class RSRAssetManager : public mds::IRProgramMemElem
 	{
-	private:
-		static RSRAssetManager Instance;
 	protected:
 		mds::RUnorderedStringMap<RSRSharedAssetPtr> m_pinnedAssets;
 		mds::RUnorderedStringMap<RSRWeakAssetPtr> m_assets;
 
 	public:
-#pragma region Instance
-		RSRAssetManager(const RSRAssetManager&) = delete;
-		RSRAssetManager& operator=(const RSRAssetManager&) = delete;
-		static RSRAssetManager& Get() { return Instance; }
-#pragma endregion
+		static RSRAssetManager* Get(const mds::IRProgramMemElem* InProgramMemElem);
+		static RSRAssetManager* Get(RSRProgramInstance* InProgramInstance);
+
 	public:
 #pragma region Asset
 		bool Exist(const std::string_view InKey) const;
@@ -62,6 +63,10 @@ namespace RSRush
 		}
 
 		std::shared_ptr<RSRTexture2D> AddTextureAsset(const std::string_view InTextureAssetPath, bool bInPin);
+		std::shared_ptr<RSRTexture2D> AddTextureAsset(const std::string_view InTextureAssetPath, bool bInPin, std::string& OutResultName);
+		
+		std::shared_ptr<RSRMesh3D> AddMesh3DAsset(const std::string_view InMeshAssetPath, bool bInPin, RSRTextureLibrary* InTextureLibrary);
+		std::shared_ptr<RSRMesh3D> AddMesh3DAsset(const std::string_view InMeshAssetPath, bool bInPin, RSRTextureLibrary* InTextureLibrary, std::string& OutResultName);
 
 		/// <summary>
 		/// Remove asset associated with the given key, Unpin if pinned
@@ -77,7 +82,9 @@ namespace RSRush
 
 #pragma endregion
 
-	private:
-		RSRAssetManager();
+	public:
+		RSRAssetManager(RSRProgramInstance* InProgramInstance);
+		void Init();
+		void ShutDown();
 	};
 }

@@ -1,6 +1,9 @@
 #include "App/Gameplay/Scene/RSRSceneInstancedMeshes.h"
 
+#include "MDS/Tools/System/IRProgramMemNode.h"
+
 #include "App/Data/Meshes/RSRMesh.h"
+#include "App/Game/RSRProgramInstance.h"
 #include "App/Gameplay/RSRScene.h"
 #include "App/Gameplay/Scene/RSRIInstancedMesheHolder.h"
 #include "App/Tools/RSRLog.h"
@@ -111,7 +114,8 @@ void RSRush::RSRSceneInstancedMeshes::UpdateUploadBuffer()
                 auto newBuffersPair = m_MeshInstancesBuffers.emplace(meshPtr, RSRMeshInstances(sizeof(VertexBufferInstanceData)));
                 meshBuffers = &newBuffersPair.first->second;
             }
-            meshBuffers->UpdateUploadBuffer(DXContext::Get().GetDevice().Get(), instancesData.data(), instancesData.size());
+
+            meshBuffers->UpdateUploadBuffer(DXContext::Get(m_owningMemElement)->GetDevice().Get(), instancesData.data(), instancesData.size());
 
             m_previousMeshInstanceCount.emplace(meshPtr, instancesData.size());
         }
@@ -135,7 +139,7 @@ void RSRush::RSRSceneInstancedMeshes::UploadResources(ID3D12GraphicsCommandList7
             }
             if (meshBuffers)
             {
-                meshBuffers->CopyUploadBufferToGPU(DXContext::Get().GetDevice().Get(), InUploadCommandList);
+                meshBuffers->CopyUploadBufferToGPU(DXContext::Get(m_owningMemElement)->GetDevice().Get(), InUploadCommandList);
             }
         }
     }
@@ -173,4 +177,13 @@ void RSRush::RSRSceneInstancedMeshes::ClearUnusedBuffers()
             ++it;
         }
     }
+}
+
+RSRush::RSRSceneInstancedMeshes::RSRSceneInstancedMeshes(mds::IRProgramMemElem* InOwningMemElem)
+: m_owningMemElement(InOwningMemElem)
+{
+}
+
+RSRush::RSRSceneInstancedMeshes::~RSRSceneInstancedMeshes()
+{
 }

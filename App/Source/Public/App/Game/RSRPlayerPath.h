@@ -12,6 +12,7 @@
 
 namespace RSRush
 {
+	class RSRPhysicManager;
 	struct RSRPPNode
 	{
 #pragma region Defs
@@ -70,8 +71,12 @@ namespace RSRush
 	class RSRPlayerPath
 	{
 	private:
+		RSRPhysicManager* m_physicManager;
 		std::deque<RSRPPNode> m_pathPoints;
 	public:
+		RSRPlayerPath(RSRPhysicManager* InPhysicManager);
+	public:
+		inline RSRPhysicManager* GetPhysicManager() const { return m_physicManager; }
 		RSRPPNode* GetLastNode() { return ((m_pathPoints.size() > 0)? &m_pathPoints.back():nullptr); }
 		inline const RSRPPNode * GetLastNode() const { return ((m_pathPoints.size() > 0) ? &m_pathPoints.back() : nullptr); }
 		inline void PushBackNode(RSRPPNode&& InNewNode) { m_pathPoints.push_back(std::move(InNewNode)); }

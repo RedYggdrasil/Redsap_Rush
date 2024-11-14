@@ -9,11 +9,13 @@
 
 using namespace RSRush;
 
-RSRush::PlayerController::PlayerController()
+PlayerController::PlayerController()
+: mds::IRProgramMemNode()
 {
 }
 
-RSRush::PlayerController::~PlayerController()
+
+PlayerController::~PlayerController()
 {
 }
 

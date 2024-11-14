@@ -68,6 +68,8 @@ namespace RSRush
 	public:
 		bool DrawMesh(ID3D12GraphicsCommandList7* InUploadCommandList, const UINT InInstanceCount = 1) const;
 		bool DrawMesh(ID3D12GraphicsCommandList7* InUploadCommandList, const RSRTransformMatrix& InPinnedTransformMatrix, const UINT InInstanceCount = 1) const;
+	public:
+		static void ApplyTransformToRootSig(ID3D12GraphicsCommandList7* InUploadCommandList, const RSRTransformMatrix& InPinnedTransformMatrix);
 	};
 #undef l_ComPtr
 }

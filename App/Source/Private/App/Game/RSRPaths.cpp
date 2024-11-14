@@ -13,3 +13,7 @@ std::string_view RSRPaths::m_assetsDiskPath_view;
 std::filesystem::path RSRPaths::m_shadersDiskPath;
 std::string RSRPaths::m_shadersDiskPath_str;
 std::string_view RSRPaths::m_shadersDiskPath_view;
+
+std::filesystem::path RSRPaths::m_assetFolderAndSeparator;
+std::string RSRPaths::m_assetFolderAndSeparator_str;
+std::string_view RSRPaths::m_assetFolderAndSeparator_view;

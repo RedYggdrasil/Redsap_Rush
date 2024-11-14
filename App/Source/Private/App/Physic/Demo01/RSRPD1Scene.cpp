@@ -1,6 +1,7 @@
 #include "App/Physic/Demo01/RSRPD1Scene.h"
 
 #include "App/Data/Textures/RSRTexture2D.h"
+#include "App/Data/Textures/RSRTextureLibrary.h"
 #include "App/D3D/DXContext.h"
 #include "App/Game/RSRProgramInstance.h"
 #include "App/Physic/Demo01/Gameplay/RSRPD1GameManager.h"
@@ -43,6 +44,10 @@ static const std::vector<RSRLDElem> LDElems = FillLevelData();
 bool RSRPD1Scene::Load()
 {
 	bool bAllSucessfull = RSROScene::Load();
+
+	m_3dTextures = RSRTextureLibrary::Create(this);
+	m_2dTextures = RSRTextureLibrary::Create(this);
+
 	bool bNoGravity = false;
 	if (bNoGravity)
 	{
@@ -51,10 +56,12 @@ bool RSRPD1Scene::Load()
 			.GlobalGravity = XMFLOAT3{ 0.f, 0.f , 0.00f}
 		};
 	}
-	RSRAssetManager* pAssetManager = &RSRAssetManager::Get();
+	std::shared_ptr<RSRPD1Scene> _thisPtr = LockSelf<RSRPD1Scene>();
+
+	RSRAssetManager* pAssetManager = RSRAssetManager::Get(this);
 	m_gameManager = std::make_shared<RSRPD1GameManager>();
 
-	m_gameManager->InitializeGame(this->m_thisWPtr);
+	m_gameManager->InitializeGame(_thisPtr, m_gameManager);
 
 	bAllSucessfull = RSRLDReader::FillLDDatas(LDElems, this) && bAllSucessfull;
 
@@ -64,6 +71,7 @@ bool RSRPD1Scene::Load()
 
 	AddNewSObject(std::make_shared<RSRODrawableBackground>
 		(
+			RSRBasicShapes::Get(this),
 			RSRTransform
 			{
 				.Position = DirectX::XMFLOAT3{ 90.0f, 0.0f, 0.0f },
@@ -74,13 +82,13 @@ bool RSRPD1Scene::Load()
 			));
 	m_drawableLightSource = AddNewSObject(std::make_shared<RSRODrawableLightSource>
 		(
+			RSRBasicShapes::Get(this),
 			RSRTransform
 			{
 				.Position = DirectX::XMFLOAT3{ 50.0f, 30.0f, 40.0f },
 				.Rotation = DirectX::XMFLOAT3(0.f, 0.f, 0.f),
 				.Scale = DirectX::XMFLOAT3(1.f, 1.f, 1.f),
 			},
-			/*Handle as SObject*/true,
 			1
 			));
 
@@ -139,28 +147,28 @@ bool RSRPD1Scene::Load()
 	//		}, WORLD_STATIC, false
 	//	)
 	//);
+	RSRPhysicManager* physicManager = RSRPhysicManager::Get(this);
+	physicManager->AddPhysicSolver(RSRSolverType::Position);
+	physicManager->AddPhysicSolver(RSRSolverType::Impulse);
 
-	RSRush::RSRPhysicManager::Get().AddPhysicSolver(RSRSolverType::Position);
-	RSRush::RSRPhysicManager::Get().AddPhysicSolver(RSRSolverType::Impulse);
-
-	
+	DXContext* context = DXContext::Get(this);
 
 	//Copy CPU Resource --> GPU Resource
-	auto* verticesCmdList = DXContext::Get().InitRenderCommandList();
+	auto* verticesCmdList = context->InitRenderCommandList();
 
-	_RF_FALSE(RSRush::RSRBasicShapes::Get().UploadResources(DXContext::Get().GetDevice().Get(), verticesCmdList));
+	_RF_FALSE(RSRush::RSRBasicShapes::Get(this)->UploadResources(context->GetDevice().Get(), verticesCmdList));
 #if DEBUG_PHYSIC
-	_RF_FALSE(RSRush::RSRPhysicManager::Get().UploadResources(DXContext::Get().GetDevice().Get(), verticesCmdList));
+	_RF_FALSE(physicManager->UploadResources(DXContext::Get().GetDevice().Get(), verticesCmdList));
 #endif
 
-	UploadSOResources(DXContext::Get().GetDevice().Get(), verticesCmdList);
+	UploadSOResources(context->GetDevice().Get(), verticesCmdList);
 
-	DXContext::Get().ExecuteRenderCommandList();
+	context->ExecuteRenderCommandList();
 	verticesCmdList = nullptr;
 
-	RSRush::RSRBasicShapes::Get().FreeUploadBuffers();
+	RSRush::RSRBasicShapes::Get(this)->FreeUploadBuffers();
 #if DEBUG_PHYSIC
-	RSRush::RSRPhysicManager::Get().FreeUploadBuffers();
+	physicManager->FreeUploadBuffers();
 #endif
 	FreeSOUploadBuffers();
 
@@ -168,55 +176,64 @@ bool RSRPD1Scene::Load()
 
 	//Textures
 	/*0*/ static const std::string space_512_512_BGRA_32BPP = (std::filesystem::path(TEXT("Textures")) / TEXT("space_512_512_BGRA_32BPP.png")).string();
-	/*0*/ m_3dTextures.push_back(pAssetManager->AddTextureAsset(space_512_512_BGRA_32BPP, false));
+	/*0*/ //m_3dTextures.push_back(pAssetManager->AddTextureAsset(space_512_512_BGRA_32BPP, false));
+	m_3dTextures->AddGetByPath(space_512_512_BGRA_32BPP);
 
 	/*01*/ static const std::string sun_512_512_BGRA_32BPP = (std::filesystem::path(TEXT("Textures")) / TEXT("sun_512_512_BGRA_32BPP.png")).string();
-	/*01*/ m_3dTextures.push_back(pAssetManager->AddTextureAsset(sun_512_512_BGRA_32BPP, false));
+	/*01*/ //m_3dTextures.push_back(pAssetManager->AddTextureAsset(sun_512_512_BGRA_32BPP, false));
+	m_3dTextures->AddGetByPath(sun_512_512_BGRA_32BPP);
 
 	/*02*/ static const std::string sun_b_512_512_BGRA_32BPP = (std::filesystem::path(TEXT("Textures")) / TEXT("sun_b_512_512_BGRA_32BPP.png")).string();
-	/*02*/ m_3dTextures.push_back(pAssetManager->AddTextureAsset(sun_b_512_512_BGRA_32BPP, false));
+	/*02*/ //m_3dTextures.push_back(pAssetManager->AddTextureAsset(sun_b_512_512_BGRA_32BPP, false));
+	m_3dTextures->AddGetByPath(sun_b_512_512_BGRA_32BPP);
 
 	/*03*/ static const std::string sun_p_512_512_BGRA_32BPP = (std::filesystem::path(TEXT("Textures")) / TEXT("sun_p_512_512_BGRA_32BPP.png")).string();
-	/*03*/ m_3dTextures.push_back(pAssetManager->AddTextureAsset(sun_p_512_512_BGRA_32BPP, false));
+	/*03*/ //m_3dTextures.push_back(pAssetManager->AddTextureAsset(sun_p_512_512_BGRA_32BPP, false));
+	m_3dTextures->AddGetByPath(sun_p_512_512_BGRA_32BPP);
 
 	/*04*/ static const std::string sun_r_512_512_BGRA_32BPP = (std::filesystem::path(TEXT("Textures")) / TEXT("sun_r_512_512_BGRA_32BPP.png")).string();
-	/*04*/ m_3dTextures.push_back(pAssetManager->AddTextureAsset(sun_r_512_512_BGRA_32BPP, false));
+	/*04*/ //m_3dTextures.push_back(pAssetManager->AddTextureAsset(sun_r_512_512_BGRA_32BPP, false));
+	m_3dTextures->AddGetByPath(sun_r_512_512_BGRA_32BPP);
 
 	/*05*/ static const std::string sun_g_512_512_BGRA_32BPP = (std::filesystem::path(TEXT("Textures")) / TEXT("sun_g_512_512_BGRA_32BPP.png")).string();
-	/*05*/ m_3dTextures.push_back(pAssetManager->AddTextureAsset(sun_g_512_512_BGRA_32BPP, false));
+	/*05*/ //m_3dTextures.push_back(pAssetManager->AddTextureAsset(sun_g_512_512_BGRA_32BPP, false));
+	m_3dTextures->AddGetByPath(sun_g_512_512_BGRA_32BPP);
 	
 	/*06*/ static const std::string GreebleTexture_Outline_00 = (std::filesystem::path(TEXT("Textures")) / TEXT("GreebleTexture_Outline_00.png")).string();
-	/*06*/ m_3dTextures.push_back(pAssetManager->AddTextureAsset(GreebleTexture_Outline_00, false));
+	/*06*/ //m_3dTextures.push_back(pAssetManager->AddTextureAsset(GreebleTexture_Outline_00, false));
+	m_3dTextures->AddGetByPath(GreebleTexture_Outline_00);
 
 	/*07*/ static const std::string GreebleTexture_Outline_01 = (std::filesystem::path(TEXT("Textures")) / TEXT("GreebleTexture_Outline_01.png")).string();
-	/*07*/ m_3dTextures.push_back(pAssetManager->AddTextureAsset(GreebleTexture_Outline_01, false));
+	/*07*/ //m_3dTextures.push_back(pAssetManager->AddTextureAsset(GreebleTexture_Outline_01, false));
+	m_3dTextures->AddGetByPath(GreebleTexture_Outline_01);
 
 	/*08*/ static const std::string GreebleTexture_Outline_02 = (std::filesystem::path(TEXT("Textures")) / TEXT("GreebleTexture_Outline_02.png")).string();
-	/*08*/ m_3dTextures.push_back(pAssetManager->AddTextureAsset(GreebleTexture_Outline_02, false));
+	/*08*/ //m_3dTextures.push_back(pAssetManager->AddTextureAsset(GreebleTexture_Outline_02, false));
+	m_3dTextures->AddGetByPath(GreebleTexture_Outline_02);
 
 	/*00*/ static const std::string target_512_512_BGRA_32BPP = (std::filesystem::path(TEXT("Sprites")) / TEXT("target_512_512_BGRA_32BPP.png")).string();
-	/*00*/ m_2dTextures.push_back(pAssetManager->AddTextureAsset(target_512_512_BGRA_32BPP, false));
+	/*00*/ //m_2dTextures.push_back(pAssetManager->AddTextureAsset(target_512_512_BGRA_32BPP, false));
+	m_3dTextures->AddGetByPath(target_512_512_BGRA_32BPP);
 
 	/*01*/ static const std::string heart_custom_0 = (std::filesystem::path(TEXT("Sprites")) / TEXT("heart_custom_0.png")).string();
-	/*01*/ m_2dTextures.push_back(pAssetManager->AddTextureAsset(heart_custom_0, false));
+	/*01*/ //m_2dTextures.push_back(pAssetManager->AddTextureAsset(heart_custom_0, false));
+	m_3dTextures->AddGetByPath(heart_custom_0);
 
 	/*02*/ static const std::string heart_custom_1 = (std::filesystem::path(TEXT("Sprites")) / TEXT("heart_custom_1.png")).string();
-	/*02*/ m_2dTextures.push_back(pAssetManager->AddTextureAsset(heart_custom_1, false));
+	/*02*/ //m_2dTextures.push_back(pAssetManager->AddTextureAsset(heart_custom_1, false));
+	m_3dTextures->AddGetByPath(heart_custom_1);
 
 	//Copy CPU Resource --> GPU Resource
-	auto* allocationCmdList = DXContext::Get().InitRenderCommandList();
+	auto* allocationCmdList = context->InitRenderCommandList();
 
-	RSRush::RSRTexture2D::UploadResources(m_3dTextures, DXContext::Get().GetDevice().Get(), allocationCmdList);
-	RSRush::RSRTexture2D::CreateSRVHeapForTextures(m_3dTextures, DXContext::Get().GetDevice().Get(), m_srvheap3D);
+	bAllSucessfull = m_3dTextures->UploadResources(context->GetDevice().Get(), allocationCmdList) && bAllSucessfull;
+	bAllSucessfull = m_2dTextures->UploadResources(context->GetDevice().Get(), allocationCmdList) && bAllSucessfull;
 
-	RSRush::RSRTexture2D::UploadResources(m_2dTextures, DXContext::Get().GetDevice().Get(), allocationCmdList);
-	RSRush::RSRTexture2D::CreateSRVHeapForTextures(m_2dTextures, DXContext::Get().GetDevice().Get(), m_srvheap2D);
-
-	//EyeTexture->UploadResources(DXContext::Get().GetDevice().Get(), allocationCmdList, srvheap3D);
-
-	//Execute Upload resources CommandList.
-	DXContext::Get().ExecuteRenderCommandList();
+	context->ExecuteRenderCommandList();
 	allocationCmdList = nullptr;
+
+	m_3dTextures->CreateSRVHeapForTextures(context->GetDevice().Get(), m_srvheap3D);
+	m_2dTextures->CreateSRVHeapForTextures(context->GetDevice().Get(), m_srvheap2D);
 
 	return  bAllSucessfull;
 }
@@ -231,16 +248,13 @@ bool RSRPD1Scene::UnLoad()
 	m_drawableLightSource.reset();
 	//RSRush::RSRPhysicManager::Get().RemovePhysicSolver(RSRSolverType::Impulse);
 	//RSRush::RSRPhysicManager::Get().RemovePhysicSolver(RSRSolverType::Position);
-	RSRush::RSRPhysicManager::Get().ClearAllPhysicSolvers();
+	RSRPhysicManager::Get(this)->ClearAllPhysicSolvers();
 
-	for (size_t i = 0; i < m_3dTextures.size(); ++i)
-	{
-		bAllSucessfull = m_3dTextures[i]->FreeResourcesBuffer() && bAllSucessfull;
-	}
-	for (size_t i = 0; i < m_2dTextures.size(); ++i)
-	{
-		bAllSucessfull = m_2dTextures[i]->FreeResourcesBuffer() && bAllSucessfull;
-	}
+	bAllSucessfull = m_3dTextures->UnLoad() && bAllSucessfull;
+	bAllSucessfull = m_2dTextures->UnLoad() && bAllSucessfull;
+
+	m_3dTextures.reset();
+	m_2dTextures.reset();
 
 	m_gameManager->ShutdownGame();
 
@@ -271,19 +285,21 @@ bool RSRush::RSRPD1Scene::Render(const double InGameTime, const double InDeltaTi
 	std::shared_ptr<const RSRPD1GameManager> pD1GameManager = std::static_pointer_cast<const RSRPD1GameManager>(m_gameManager);
 
 	const RSRPD1PlayerController* playerController = pD1GameManager->GetPD1PlayerController();
+	DXContext* context = DXContext::Get(this);
 
 	//Begin Drawing
-	auto* cmdList = DXContext::Get().InitRenderCommandList();
+	auto* cmdList = context->InitRenderCommandList();
 	//Draw to window (Currently presented frame goes back to writing state)
-	DXWindow::Get().BeginFrame(cmdList);
+	DXWindow* window = DXWindow::Get(this);
+	window->BeginFrame(cmdList);
 
 	// -- RS --
 	D3D12_VIEWPORT vp =
 	{
 		.TopLeftX = 0.f,
 		.TopLeftY = 0.f,
-		.Width = (FLOAT)DXWindow::Get().GetWidth(),     //narrow conversion
-		.Height = (FLOAT)DXWindow::Get().GetHeight(),   //narrow conversion
+		.Width = (FLOAT)window->GetWidth(),     //narrow conversion
+		.Height = (FLOAT)window->GetHeight(),   //narrow conversion
 		.MinDepth = 1.f,
 		.MaxDepth = 0.f
 	};
@@ -291,14 +307,16 @@ bool RSRush::RSRPD1Scene::Render(const double InGameTime, const double InDeltaTi
 	D3D12_RECT scRect = {
 		.left = 0,
 		.top = 0,
-		.right = (LONG)DXWindow::Get().GetWidth(),   //narrow conversion
-		.bottom = (LONG)DXWindow::Get().GetHeight()   //narrow conversion
+		.right = (LONG)window->GetWidth(),   //narrow conversion
+		.bottom = (LONG)window->GetHeight()   //narrow conversion
 	};
 	cmdList->RSSetScissorRects(1, &scRect);
 
+	RSRProgramInstance* programInstance = this->GetRoot<RSRProgramInstance>();
+
 	//----------- Draw3D ------------//
-	cmdList->SetPipelineState(m_programInstance->GetPSO3D().Get());
-	cmdList->SetGraphicsRootSignature(m_programInstance->GetRootSig3D().Get());
+	cmdList->SetPipelineState(programInstance->GetPSO3D().Get());
+	cmdList->SetGraphicsRootSignature(programInstance->GetRootSig3D().Get());
 	cmdList->SetDescriptorHeaps(1, m_srvheap3D.GetAddressOf());
 	cmdList->SetGraphicsRootDescriptorTable(1, m_srvheap3D->GetGPUDescriptorHandleForHeapStart());
 
@@ -318,8 +336,8 @@ bool RSRush::RSRPD1Scene::Render(const double InGameTime, const double InDeltaTi
 	DrawSOMeshs(cmdList);
 
 	//----------- DrawInstanced ------------//
-	cmdList->SetPipelineState(m_programInstance->GetPSO3DInstanced().Get());
-	cmdList->SetGraphicsRootSignature(m_programInstance->GetRootSig3DInstanced().Get());
+	cmdList->SetPipelineState(programInstance->GetPSO3DInstanced().Get());
+	cmdList->SetGraphicsRootSignature(programInstance->GetRootSig3DInstanced().Get());
 	//cmdList->SetDescriptorHeaps(1, m_srvheap3D.GetAddressOf()); //already set
 	cmdList->SetGraphicsRootDescriptorTable(1, m_srvheap3D->GetGPUDescriptorHandleForHeapStart());
 
@@ -355,14 +373,14 @@ bool RSRush::RSRPD1Scene::Render(const double InGameTime, const double InDeltaTi
 #endif
 
 	//(Currently presented frame goes to PresentState)
-	DXWindow::Get().EndFrame(cmdList);
+	window->EndFrame(cmdList);
 
 	//Force Sync the renderer as ExecuteCommandList Wait for the GPU end of execution before returning
 	//This is for simplicity, but of course deafeat the purpuse of DX12 async approch
-	DXContext::Get().ExecuteRenderCommandList();
+	context->ExecuteRenderCommandList();
 
 	//Swap the chain (present result)
-	DXWindow::Get().Present();
+	window->Present();
 
 	return bAllSucessfull;
 }

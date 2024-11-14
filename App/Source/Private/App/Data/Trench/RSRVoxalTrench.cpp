@@ -13,6 +13,7 @@
 #include "App/System/RSRRandomizer.h"
 #include "App/Tools/RSRLog.h"
 #include "App/Data/Trench/Obstacles/RSRVoxelObstacle.h"
+#include "App/Managers/RSRPhysicManager.h"
 #include "App/Managers/RSRTrenchManager.h"
 
 #include <array>
@@ -275,7 +276,7 @@ void RSRVoxalTrench::GenerateGeometry()
 		obstacle->FillAdditionalGeometry(vertices, triangles);
 	}
 
-	RSRSharedMesh3DPtr voxalTrenchMesh = RSRAssetManager::Get().AddAsset<RSRMesh3D>
+	RSRSharedMesh3DPtr voxalTrenchMesh = RSRAssetManager::Get(m_trenchManager->GetProgramInstance())->AddAsset<RSRMesh3D>
 		(
 			mds::NameDynamicAsset(mds::RAssetType::Mesh, std::format("Trench{}_Basic", m_instanceID)),
 			false,
@@ -317,11 +318,12 @@ size_t RSRush::RSRVoxalTrench::GenerateObstacles()
 
 	size_t sucessfullyPlaced = 0;
 
+	RSRPhysicManager* physicManager = RSRPhysicManager::Get(m_trenchManager);
 	for (size_t i = 0; i < nbObstaclesMax; ++i)
 	{
 		PushBackObstacle(/*InOut*/m_obstacles, /*InOut*/gen);
 
-		if (m_obstacles.back()->AttemptPlacement(gen,m_grid, m_mainTransform, 10U))
+		if (m_obstacles.back()->AttemptPlacement(physicManager, gen, m_grid, m_mainTransform, 10U))
 		{
 			++sucessfullyPlaced;
 		}

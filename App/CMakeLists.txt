@@ -98,11 +98,13 @@ set(APP_SOURCES_CPP
   ${APP_PUBLIC_SRC}Data/Meshes/RSRMesh.h					${APP_PRIVTE_SRC}Data/Meshes/RSRMesh.cpp
   ${APP_PUBLIC_SRC}Data/Meshes/RSRMesh2D.h					${APP_PRIVTE_SRC}Data/Meshes/RSRMesh2D.cpp
   ${APP_PUBLIC_SRC}Data/Meshes/RSRMesh3D.h					${APP_PRIVTE_SRC}Data/Meshes/RSRMesh3D.cpp
+  ${APP_PUBLIC_SRC}Data/Meshes/RSRMesh3DCollection.h		${APP_PRIVTE_SRC}Data/Meshes/RSRMesh3DCollection.cpp
   ${APP_PUBLIC_SRC}Data/Meshes/RSRMeshLODs.h				${APP_PRIVTE_SRC}Data/Meshes/RSRMeshLODs.cpp
   
   ${APP_PUBLIC_SRC}Data/Meshes/RSRMeshInstances.h			${APP_PRIVTE_SRC}Data/Meshes/RSRMeshInstances.cpp
 
   ${APP_PUBLIC_SRC}Data/Textures/RSRTexture2D.h				${APP_PRIVTE_SRC}Data/Textures/RSRTexture2D.cpp
+  ${APP_PUBLIC_SRC}Data/Textures/RSRTextureLibrary.h		${APP_PRIVTE_SRC}Data/Textures/RSRTextureLibrary.cpp
   
   ${APP_PUBLIC_SRC}Data/Physic/RSRCollider.h				${APP_PRIVTE_SRC}Data/Physic/RSRCollider.cpp
   ${APP_PUBLIC_SRC}Data/Physic/RSRCollisionType.h			${APP_PRIVTE_SRC}Data/Physic/RSRCollisionType.cpp
@@ -135,6 +137,7 @@ set(APP_SOURCES_CPP
   ${APP_PUBLIC_SRC}Data/Trench/Obstacles/RSRVoxelRectangularObstacle.h	${APP_PRIVTE_SRC}Data/Trench/Obstacles/RSRVoxelRectangularObstacle.cpp
 
   ${APP_PUBLIC_SRC}Geometry/RSRBasicShapes.h				${APP_PRIVTE_SRC}Geometry/RSRBasicShapes.cpp
+  ${APP_PUBLIC_SRC}Geometry/RSRMeshLoader.h					${APP_PRIVTE_SRC}Geometry/RSRMeshLoader.cpp
 
   ${APP_PRIVTE_SRC}main.cpp
 )
@@ -233,10 +236,12 @@ get_property(GAMEINPUT_LIB GLOBAL PROPERTY GAMEINPUT_LIB)
 
 
 get_property(TRACY_INC_PATH GLOBAL PROPERTY TRACY_INC_PATH)
+get_property(ASSIMP_INC_PATH GLOBAL PROPERTY ASSIMP_INC_PATH)
 
 
 
-target_link_libraries(${APP_NAME} PUBLIC "MDS" "d3d12.lib" "dxgi.lib" "dxguid.lib" ${GAMEINPUT_LIB} Tracy::TracyClient)
+target_link_libraries(${APP_NAME} PUBLIC "MDS" "zlibstatic" "assimp" "d3d12.lib" "dxgi.lib" "dxguid.lib" ${GAMEINPUT_LIB} Tracy::TracyClient ${ASSIMP_LIBRARIES})
+
 
 target_include_directories(${APP_NAME} 
  PUBLIC
@@ -244,6 +249,7 @@ target_include_directories(${APP_NAME}
   "${CMAKE_CURRENT_SOURCE_DIR}/Source/Public/"
   ${GAMEINPUT_INC_PATH}
   ${TRACY_INC_PATH}
+  ${ASSIMP_INC_PATH}
  PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}/Source/Private/"
 )

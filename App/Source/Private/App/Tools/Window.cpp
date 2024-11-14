@@ -1,15 +1,15 @@
 #include "App/Tools/Window.h"
-#include <algorithm>
-#include <iostream>
-#include <Windows.h>
-#include <WindowsX.h>
 
 #include "App/Tools/RSRLog.h"
 #include "mds/Tools/System/RKeyCodes.h"
 #include "App/D3D/DXContext.h"
+#include "App/Game/RSRProgramInstance.h"
 #include "App/Interfaces/Listeners/IInputListener.h"
 #include <Tracy.hpp>
-DXWindow DXWindow::Instance = DXWindow();
+#include <algorithm>
+#include <iostream>
+#include <Windows.h>
+#include <WindowsX.h>
 
 namespace DXwd = DXWindowDefaults;
 
@@ -30,8 +30,25 @@ const DWORD DXwd::WINDOW_FULLSCREEN_STYLE   = WS_POPUP | WS_VISIBLE;
 const DWORD DXwd::WINDOW_FULLSCREEN_EXSTYLE = WS_EX_APPWINDOW;
 
 
-bool DXWindow::Init()
+
+std::unordered_map<HWND, DXWindow*> DXWindow::sm_dxWindowLookup;
+
+
+
+DXWindow* DXWindow::Get(mds::IRProgramMemElem* InProgramMemElem)
 {
+    return InProgramMemElem->GetRoot<RSRush::RSRProgramInstance>()->GetDXWindow();
+}
+
+DXWindow* DXWindow::Get(RSRush::RSRProgramInstance* InProgramInstance)
+{
+    return InProgramInstance->GetDXWindow();
+}
+
+bool DXWindow::Init(RSRush::RSRProgramInstance* InProgramInstance)
+{
+    this->InitMemElem(InProgramInstance);
+
     HRESULT hResult;
     WNDCLASSEXW wcex{};
     wcex.cbSize     = sizeof(wcex);
@@ -76,7 +93,11 @@ bool DXWindow::Init()
         return false;
     }
 
-    const auto& factory = DXContext::Get().GetFactory();
+    sm_dxWindowLookup.emplace(m_window, this);
+
+    DXContext* dxContext = DXContext::Get(this);
+
+    const auto& factory = dxContext->GetFactory();
 
     DXGI_SWAP_CHAIN_DESC1 swd{};
     swd.Width       = DXwd::WIDTH;
@@ -104,7 +125,7 @@ bool DXWindow::Init()
 
     Microsoft::WRL::ComPtr<IDXGISwapChain1> sc1;
     
-    hResult = factory->CreateSwapChainForHwnd(DXContext::Get().GetRenderCommandQueue().Get(), m_window, &swd, &sfd, nullptr, &sc1);
+    hResult = factory->CreateSwapChainForHwnd(dxContext->GetRenderCommandQueue().Get(), m_window, &swd, &sfd, nullptr, &sc1);
     if (FAILED(hResult))
     {
         RSRLog::Log(LOG_EXCEPTION, hResult, TEXT("Failed to create Swap Chain !"));
@@ -124,7 +145,7 @@ bool DXWindow::Init()
     descHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
     descHeapDesc.NodeMask = 0;
     
-    hResult = DXContext::Get().GetDevice()->CreateDescriptorHeap(&descHeapDesc, IID_PPV_ARGS(&m_rtvDescHeap));
+    hResult = dxContext->GetDevice()->CreateDescriptorHeap(&descHeapDesc, IID_PPV_ARGS(&m_rtvDescHeap));
     if (FAILED(hResult))
     {
         RSRLog::Log(LOG_EXCEPTION, hResult, TEXT("Failed to create DescriptorHeap !"));
@@ -133,7 +154,7 @@ bool DXWindow::Init()
     //Create CPU view handles
     D3D12_CPU_DESCRIPTOR_HANDLE firstHandle = m_rtvDescHeap->GetCPUDescriptorHandleForHeapStart();
 
-    UINT handleSize = DXContext::Get().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+    UINT handleSize = dxContext->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
     
     for (size_t i = 0; i < DXWindowDefaults::SWAP_CHAIN_BUFFER_COUNT; ++i)
     {
@@ -149,7 +170,7 @@ bool DXWindow::Init()
         .Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE,
         .NodeMask = 0
     };
-    hResult = DXContext::Get().GetDevice()->CreateDescriptorHeap(&dsvDescHeapDesc, IID_PPV_ARGS(&m_dsvDescHeap));
+    hResult = dxContext->GetDevice()->CreateDescriptorHeap(&dsvDescHeapDesc, IID_PPV_ARGS(&m_dsvDescHeap));
     if (FAILED(hResult))
     {
         RSRLog::Log(LOG_EXCEPTION, hResult, TEXT("Failed to create DescriptorHeap m_dsvDescHeap !"));
@@ -215,6 +236,11 @@ void DXWindow::Shutdown()
     {
         UnregisterClassW((LPCWSTR)m_wndClass, GetModuleHandleW(nullptr));
     }
+    sm_dxWindowLookup.erase(m_window);
+    if (m_initializedMemElem)
+    {
+        this->ResetMemTreeData();
+    }
 }
 
 void DXWindow::Resize()
@@ -241,7 +267,7 @@ void DXWindow::Resize()
 bool DXWindow::CreateDepthBuffer(UINT InWidth, UINT InHeight)
 {
     //Create Depth Buffer : 
-
+    DXContext* dxContext = DXContext::Get(this);
     D3D12_HEAP_PROPERTIES depthHeapProperties =
     {
         .Type = D3D12_HEAP_TYPE_DEFAULT,
@@ -274,7 +300,7 @@ bool DXWindow::CreateDepthBuffer(UINT InWidth, UINT InHeight)
         }
     };
 
-    if (FAILED(DXContext::Get().GetDevice()->CreateCommittedResource(
+    if (FAILED(dxContext->GetDevice()->CreateCommittedResource(
         &depthHeapProperties, D3D12_HEAP_FLAG_NONE, &depthResourceDesc,
         D3D12_RESOURCE_STATE_DEPTH_WRITE, &clearValue, IID_PPV_ARGS(&m_depthStencil)
     )))
@@ -288,7 +314,7 @@ bool DXWindow::CreateDepthBuffer(UINT InWidth, UINT InHeight)
         .ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D,
         .Flags = D3D12_DSV_FLAG_NONE
     };
-    DXContext::Get().GetDevice()->CreateDepthStencilView(
+    dxContext->GetDevice()->CreateDepthStencilView(
         m_depthStencil.Get(),
         &dsvDesc,
         m_dsvDescHeap->GetCPUDescriptorHandleForHeapStart());
@@ -411,7 +437,7 @@ bool DXWindow::GetBuffers()
         rtv.Format = DXwd::SWAP_CHAIN_BUFFER_FORMAT;
         rtv.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
         rtv.Texture2D = { .MipSlice = 0, .PlaneSlice = 0 };
-        DXContext::Get().GetDevice()->CreateRenderTargetView(m_buffers[i].Get(), &rtv, m_rtvHandles[i]);
+        DXContext::Get(this)->GetDevice()->CreateRenderTargetView(m_buffers[i].Get(), &rtv, m_rtvHandles[i]);
     }
     return true;
 }
@@ -427,63 +453,87 @@ void DXWindow::ReleaseBuffers()
 //lParam is windows parameters
 LRESULT DXWindow::OnWindowMessage(HWND wnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
-    switch (msg)
-    {
-    case WM_LBUTTONDOWN:
-        //RSRLog::Log(LOG_DISPLAY, TEXT("Mouse LButton Down !"));
-        break;
-    case WM_LBUTTONUP:
-        //RSRLog::Log(LOG_DISPLAY, TEXT("Mouse LButton Up !"));
-        break;
-    case WM_MOUSEMOVE:
-    {
-        DXWindow& thiwWnd = Get();
-        int xAxis = GET_X_LPARAM(lparam);
-        int yAxis = GET_Y_LPARAM(lparam);
+    auto it = sm_dxWindowLookup.find(wnd);
 
-        thiwWnd.m_mouseRelativePosition =
-        {
-            ((float)xAxis / (float)thiwWnd.m_width),
-            ((float)yAxis / (float)thiwWnd.m_height)
-        };
-        break;
-    }
-    case WM_KEYDOWN:
+    if (it != sm_dxWindowLookup.end()) 
     {
-        if (wparam == VK_F11)
+        DXWindow* thisPtr = it->second;
+
+        switch (msg)
         {
-            Get().SetFullscreen((!Get().IsFullscreen()));
+        case WM_LBUTTONDOWN:
+            //RSRLog::Log(LOG_DISPLAY, TEXT("Mouse LButton Down !"));
+            break;
+        case WM_LBUTTONUP:
+            //RSRLog::Log(LOG_DISPLAY, TEXT("Mouse LButton Up !"));
+            break;
+        case WM_MOUSEMOVE:
+        {
+            int xAxis = GET_X_LPARAM(lparam);
+            int yAxis = GET_Y_LPARAM(lparam);
+
+            thisPtr->m_mouseRelativePosition =
+            {
+                ((float)xAxis / (float)thisPtr->m_width),
+                ((float)yAxis / (float)thisPtr->m_height)
+            };
+            break;
         }
-    }
-    case WM_KEYUP:
-    {
-    }
-    case WM_CHAR:
-    {
-        //std::cout << "WM_CHAR : '" << wparam << "' (" << lparam << ")" << std::endl;
-        break;
-    }
+        case WM_KEYDOWN:
+        {
+            if (wparam == VK_F11)
+            {
+                thisPtr->SetFullscreen((!thisPtr->IsFullscreen()));
+            }
+        }
+        case WM_KEYUP:
+        {
+        }
+        case WM_CHAR:
+        {
+            //std::cout << "WM_CHAR : '" << wparam << "' (" << lparam << ")" << std::endl;
+            break;
+        }
         //Window resize event
-    case WM_SIZE:
-        //In case of WM_SIZE lParam is a 64bit integer witch is actually 2 short UINT height and width bundled together on the low order (first 32 bytes)
-        // lparam BYTE : [EMPTY] [EMPTY] [EMPTY] [EMPTY] [HEIGHT] [HEIGHT] [WIDTH] [WIDTH]
-        //                                                 HIWORD(lparam)    LOWORD(lparam)
-        //if lParam is not 0 (would be zero if window minimized), we check if width or height is different than buffer size)
-        //HIWORD return hight order value from value (first 2 bytes) LOWORD return low order value
-        if (lparam/*not 0*/ && (HIWORD(lparam) != Get().m_height || LOWORD(lparam) != Get().m_width))
+        case WM_SIZE:
         {
-            //We are there if windows is drawn (size > 0) et size different than current swap chain
-            //This avoid a swap chain resize on minimize and reopen, as size would have stayed the same
-            Get().m_shouldResize = true;
+            //In case of WM_SIZE lParam is a 64bit integer witch is actually 2 short UINT height and width bundled together on the low order (first 32 bytes)
+            // lparam BYTE : [EMPTY] [EMPTY] [EMPTY] [EMPTY] [HEIGHT] [HEIGHT] [WIDTH] [WIDTH]
+            //                                                 HIWORD(lparam)    LOWORD(lparam)
+            //if lParam is not 0 (would be zero if window minimized), we check if width or height is different than buffer size)
+            //HIWORD return hight order value from value (first 2 bytes) LOWORD return low order value
+
+            if (lparam/*not 0*/ && (HIWORD(lparam) != thisPtr->m_height || LOWORD(lparam) != thisPtr->m_width))
+            {
+                //We are there if windows is drawn (size > 0) et size different than current swap chain
+                //This avoid a swap chain resize on minimize and reopen, as size would have stayed the same
+                thisPtr->m_shouldResize = true;
+            }
+            break;
         }
-        break;
-    //Window close event
-    case WM_CLOSE :
-        Get().m_shouldClose = true;
-        return 0;
-        //Handle Specific cases
-    default: break;
+        //Window close event
+        case WM_CLOSE:
+            thisPtr->m_shouldClose = true;
+            return 0;
+            //Handle Specific cases
+        default: break;
+        }
     }
+
+
     //Default
     return DefWindowProcW(wnd, msg, wparam, lparam);
+}
+
+DXWindow::DXWindow()
+: mds::IRProgramMemElem()
+{
+}
+
+DXWindow::~DXWindow()
+{
+    if (m_initializedMemElem)
+    {
+        Shutdown();
+    }
 }

@@ -35,7 +35,7 @@ bool RSRGameInput::HandleGameInputMouse(IGameInputReading* InGameInputReading, R
         InUserInput->m_axis2D[0][mds::UT_cast(EMDSAxis2DType::MDS_A2D_MS_FRAME)] = mds::unoptimized_substract2(InUserInput->m_axis2D[1][mds::UT_cast(EMDSAxis2DType::MDS_A2D_MS_ACC)], InUserInput->m_axis2D[0][mds::UT_cast(EMDSAxis2DType::MDS_A2D_MS_ACC)]);
     }
 
-    InUserInput->m_axis2D[0][mds::UT_cast(EMDSAxis2DType::MDS_A2D_MS_WND_NRML)] = DXWindow::Get().GetMouseRelativePosition();
+    InUserInput->m_axis2D[0][mds::UT_cast(EMDSAxis2DType::MDS_A2D_MS_WND_NRML)] = DXWindow::Get(this)->GetMouseRelativePosition();
     return bGetSucess;
 };
 

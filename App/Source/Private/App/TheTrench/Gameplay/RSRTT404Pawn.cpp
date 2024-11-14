@@ -17,6 +17,7 @@
 #include <format>
 #include <App/Tools/RSRLog.h>
 #include <Tracy.hpp>
+#include "App/TheTrench/RSRTTScene.h"
 
 #define DEBUG_FREECAM 0
 
@@ -123,7 +124,7 @@ bool RSRTT404Pawn::GetIsDebugFreeCam() const
 }
 
 RSRTT404Pawn::RSRTT404Pawn()
-	: Pawn(mds::RAssetAuthority::Absolute, false), RSRIPhysicalEntity(), m_prePhysicNewTransform(RSRush::RSRTransformMatrix(mds::TRS_IDENTITY))
+	: Pawn(mds::RAssetAuthority::Absolute), RSRIPhysicalEntity(), m_prePhysicNewTransform(RSRush::RSRTransformMatrix(mds::TRS_IDENTITY))
 {
 	m_prePhysicNewTransform = m_mainTransform;
 }
@@ -210,6 +211,39 @@ void RSRush::RSRTT404Pawn::OnInputFrameEnded()
 	}
 	XMStoreFloat2(&m_nrlzForwardPointer, ComputePointerForwardLocation());
 	this->OnPhysicalObjectRequestMove(m_prePhysicNewTransform);
+}
+
+void RSRush::RSRTT404Pawn::OnAddedToScene(std::weak_ptr<RSRSObject> InThisWPtr, std::weak_ptr<RSROScene> InScene)
+{
+	Pawn::OnAddedToScene(InThisWPtr, InScene);
+	//At this point RSRTT404Pawn is registered memTree element
+	std::shared_ptr<RSRTTScene> InScenePtr = std::static_pointer_cast<RSRTTScene>(InScene.lock());
+	if (InScenePtr)
+	{
+		GenerateMesh(InScenePtr->GetTextureLibrary3D());
+		if (!InThisWPtr.expired())
+		{
+			std::shared_ptr<RSRTT404Pawn> _thisPtr = std::dynamic_pointer_cast<RSRTT404Pawn>(InThisWPtr.lock());
+			if (_thisPtr)
+			{
+				this->SetSelfReference(_thisPtr);
+				RSRush::RSRPhysicManager::Get(this)->AddPhysicalEntity(this->GeneratePhysicBody());
+			}
+		}
+	}
+}
+
+void RSRush::RSRTT404Pawn::OnRemovedFromScene(std::weak_ptr<RSRSObject> InThisWPtr, std::weak_ptr<RSROScene> InScene)
+{
+	if (!InThisWPtr.expired())
+	{
+		std::shared_ptr<RSRTT404Pawn> _thisPtr = std::dynamic_pointer_cast<RSRTT404Pawn>(InThisWPtr.lock());
+		if (_thisPtr)
+		{
+			RSRush::RSRPhysicManager::Get(this)->RemovePhysicalEntity(this->GetEditKey());
+		}
+	}
+	Pawn::OnRemovedFromScene(InThisWPtr, InScene);
 }
 
 bool RSRush::RSRTT404Pawn::LateTickSync(const double InGameTime, const double InDeltaTime)
@@ -319,24 +353,35 @@ XMVECTOR XM_CALLCONV RSRTT404Pawn::ComputePointerWorldLocation(const float InDep
 	return rayWorld;
 }
 
-void RSRTT404Pawn::GenerateMesh()
+void RSRTT404Pawn::GenerateMesh(RSRTextureLibrary* InTextureLibrary)
 {
+	RSRBasicShapes* BasicShapes = RSRBasicShapes::Get(this);
+	RSRAssetManager* AssetManager = RSRAssetManager::Get(this);
+
+	static const std::string mesh404Ship = (std::filesystem::path(TEXT("Meshes")) / TEXT("404Ship.obj")).string();
+	std::shared_ptr<RSRush::RSRMesh3D> shipMesh = AssetManager->AddMesh3DAsset(mesh404Ship, false, InTextureLibrary);
+
+
 	XMFLOAT3 DEFAULT_COLOR = XMFLOAT3(1.f, 0.f, 0.f);
 	XMFLOAT4 DEFAULT_COLOR_4D = XMFLOAT4(1.f, 1.f, 1.f, 1.f);
-	RSRBasicShapes& BasicShapes = RSRBasicShapes::Get();
-	RSRAssetManager& AssetManager = RSRAssetManager::Get();
-	m_mainMesh = AssetManager.AddAsset<RSRMesh3D>
-		(
-			mds::NameDynamicAsset(mds::RAssetType::Mesh, TEXT("Ship404")),
-			false,
-			std::vector<VertexPositionUVColor>
+
+	m_mainMesh = shipMesh;
+	if (false)
 	{
-		{   //00 Front
-			.pos = XMFLOAT3(FRONT_FORWARD, 0.f, PEAK_HEIGHT),
-				.normal = XMFLOAT3(1.f, 0.f, 0.f),
-				.color = DEFAULT_COLOR,
-				.uv0 = XMFLOAT2(0.f, 0.f)
-		},
+		XMFLOAT3 DEFAULT_COLOR = XMFLOAT3(1.f, 0.f, 0.f);
+		XMFLOAT4 DEFAULT_COLOR_4D = XMFLOAT4(1.f, 1.f, 1.f, 1.f);
+		m_mainMesh = AssetManager->AddAsset<RSRMesh3D>
+			(
+				mds::NameDynamicAsset(mds::RAssetType::Mesh, TEXT("Ship404")),
+				false,
+				std::vector<VertexPositionUVColor>
+		{
+			{   //00 Front
+				.pos = XMFLOAT3(FRONT_FORWARD, 0.f, PEAK_HEIGHT),
+					.normal = XMFLOAT3(1.f, 0.f, 0.f),
+					.color = DEFAULT_COLOR,
+					.uv0 = XMFLOAT2(0.f, 0.f)
+			},
 				{   //01 Back Left
 					.pos = XMFLOAT3(BACK_FORWARD, -BASE_HALF_WIDTH, BOTTOM_HEIGHT),
 					.normal = XMFLOAT3(0., -1.f, 0.f),
@@ -355,27 +400,28 @@ void RSRTT404Pawn::GenerateMesh()
 					.color = DEFAULT_COLOR,
 					.uv0 = XMFLOAT2(0.0f, 1.0f)
 				}
-	},
-			std::vector<unsigned short>
-	{
-		//F0
-		0, 1, 2,
-			0, 3, 1,
-			0, 2, 3,
-			1, 3, 2
+		},
+				std::vector<unsigned short>
+		{
+			//F0
+			0, 1, 2,
+				0, 3, 1,
+				0, 2, 3,
+				1, 3, 2
+		}
+		//{
+		//	//F0
+		//	2, 1, 0,
+		//	1, 3, 0,
+		//	3, 2, 0,
+		//	2, 3, 1
+		//}
+			);
 	}
-	//{
-	//	//F0
-	//	2, 1, 0,
-	//	1, 3, 0,
-	//	3, 2, 0,
-	//	2, 3, 1
-	//}
-		);
 
 	GeneratePhysicBody();
 
-	m_pointerUI = BasicShapes.GetRegisterNewPlane2D
+	m_pointerUI = BasicShapes->GetRegisterNewPlane2D
 	(
 		TEXT("Ship404_PointerUI"),
 		DEFAULT_COLOR_4D,
@@ -389,7 +435,7 @@ void RSRTT404Pawn::GenerateMesh()
 				(POINTER_HEIGHT * 0.5f)
 			},
 		0, //TextureIndex
-		&AssetManager
+		AssetManager
 	);
 	//static const std::string lifepointUIName = TEXT("")
 	for (size_t i = 0; i < _countof(m_lifepointOnUIs); ++i)
@@ -402,7 +448,7 @@ void RSRTT404Pawn::GenerateMesh()
 		static constexpr float UIWidth = UISize;
 		static constexpr float UIWidthMargin = 0.05f;
 		static constexpr float UIHeight = UISize;
-		m_lifepointOnUIs[i] = BasicShapes.GetRegisterNewPlane2D
+		m_lifepointOnUIs[i] = BasicShapes->GetRegisterNewPlane2D
 		(
 			lifepointOnName,
 			DEFAULT_COLOR_4D,
@@ -416,9 +462,9 @@ void RSRTT404Pawn::GenerateMesh()
 				upperMargin + UIHeight
 			},
 			1, //TextureIndex
-			&AssetManager
+			AssetManager
 		);
-		m_lifepointOffUIs[i] = BasicShapes.GetRegisterNewPlane2D
+		m_lifepointOffUIs[i] = BasicShapes->GetRegisterNewPlane2D
 		(
 			lifepointOffName,
 			DEFAULT_COLOR_4D,
@@ -432,7 +478,7 @@ void RSRTT404Pawn::GenerateMesh()
 				upperMargin + UIHeight
 			},
 			2, //TextureIndex
-			&AssetManager
+			AssetManager
 		);
 	}
 }
@@ -580,9 +626,9 @@ RSRPhysicBody RSRTT404Pawn::GeneratePhysicBody() const
 	return result;
 }
 
-void RSRTT404Pawn::OnPhysicalPrePass(double InDeltaTime)
+void RSRTT404Pawn::OnPhysicalPrePass(RSRPhysicManager* InPhysicManager, double InDeltaTime)
 {
-	RSRIPhysicalEntity::OnPhysicalPrePass(InDeltaTime);
+	RSRIPhysicalEntity::OnPhysicalPrePass(InPhysicManager, InDeltaTime);
 	m_bInDamageArea = false;
 }
 

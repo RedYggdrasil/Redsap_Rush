@@ -14,13 +14,9 @@ void RSRush::Pawn::OnUnpocess(PlayerController* InController)
 	}
 }
 
-RSRush::Pawn::Pawn(const mds::RAssetAuthority InMainMeshAuthority)
-	: Pawn(InMainMeshAuthority, false)
-{
-}
 
-RSRush::Pawn::Pawn(const mds::RAssetAuthority InMainMeshAuthority, const bool bInIsHandledAsSObject)
-	: RSRSObject(InMainMeshAuthority, bInIsHandledAsSObject)
+RSRush::Pawn::Pawn(const mds::RAssetAuthority InMainMeshAuthority)
+: RSRSObject(InMainMeshAuthority)
 {
 }
 
