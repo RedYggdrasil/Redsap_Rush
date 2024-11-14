@@ -198,11 +198,6 @@ bool RSRush::RSRTexture2D::UploadResources(UINT InNbTextures, RSRTexture2D** InT
 	{
 		RSRTexture2D* texture = *(InTextures + i);
 
-		if (texture->GetTextureIndex() != (uint16_t)i)
-		{
-			RSRLog::Log(LOG_EXCEPTION, TEXT("Unexpected texture index '{}' for texture, expected index '{}' !"), i, texture->GetTextureIndex());
-		}
-		//texture->m_indexInSRVTable = i;
 		texture->m_spaceIndex = spaceIndex;
 
 		totalUploadSize += texture->m_textureData.GetTotalBytes();
