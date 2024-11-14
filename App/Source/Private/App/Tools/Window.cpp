@@ -93,6 +93,8 @@ bool DXWindow::Init(RSRush::RSRProgramInstance* InProgramInstance)
         return false;
     }
 
+    ComputeEffectiveScreenSize();
+
     sm_dxWindowLookup.emplace(m_window, this);
 
     DXContext* dxContext = DXContext::Get(this);
@@ -100,8 +102,8 @@ bool DXWindow::Init(RSRush::RSRProgramInstance* InProgramInstance)
     const auto& factory = dxContext->GetFactory();
 
     DXGI_SWAP_CHAIN_DESC1 swd{};
-    swd.Width       = DXwd::WIDTH;
-    swd.Height      = DXwd::HEIGHT;
+    swd.Width       = m_width;
+    swd.Height      = m_height;
     swd.Format      = DXwd::SWAP_CHAIN_BUFFER_FORMAT;
     swd.Stereo      = false;
     //swd.SampleDesc  = { .Count = 1, .Quality = 0}; //Aggregate named init, Cpp 20
@@ -183,7 +185,7 @@ bool DXWindow::Init(RSRush::RSRProgramInstance* InProgramInstance)
         return false;
     }
 
-    if (!CreateDepthBuffer(DXwd::WIDTH, DXwd::HEIGHT))
+    if (!CreateDepthBuffer(m_width, m_height))
     {
         return false;
     }
@@ -243,27 +245,34 @@ void DXWindow::Shutdown()
     }
 }
 
-void DXWindow::Resize()
+bool DXWindow::ComputeEffectiveScreenSize()
 {
-    ReleaseBuffers();
     RECT cr;
     if (GetClientRect(m_window, &cr))
     {
         m_width = cr.right - cr.left;
         m_height = cr.bottom - cr.top;
-
-        if (FAILED(m_swapChain->ResizeBuffers(GetFrameCount(), m_width, m_height, DXGI_FORMAT_UNKNOWN, DXwd::SWAP_CHAIN_FLAGS)))
-        {
-            //Too bad
-        }
-        if (!CreateDepthBuffer(m_width, m_height))
-        {
-            //Too bad
-        }
-        m_shouldResize = false;
+        return true;
     }
+    return false;
+}
+
+void DXWindow::Resize()
+{
+    ReleaseBuffers();
+    bool bSucess = ComputeEffectiveScreenSize();
+    if (FAILED(m_swapChain->ResizeBuffers(GetFrameCount(), m_width, m_height, DXGI_FORMAT_UNKNOWN, DXwd::SWAP_CHAIN_FLAGS)))
+    {
+        //Too bad
+    }
+    if (!CreateDepthBuffer(m_width, m_height))
+    {
+        //Too bad
+    }
+    m_shouldResize = false;
     GetBuffers();
 }
+
 bool DXWindow::CreateDepthBuffer(UINT InWidth, UINT InHeight)
 {
     //Create Depth Buffer : 

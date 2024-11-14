@@ -52,6 +52,7 @@ public:
 	void Update();
 	void Present();
 	void Shutdown();
+	bool ComputeEffectiveScreenSize();
 	void Resize();
 	bool CreateDepthBuffer(UINT InWidth, UINT InHeight);
 	void SetFullscreen(bool InbEnabled);
