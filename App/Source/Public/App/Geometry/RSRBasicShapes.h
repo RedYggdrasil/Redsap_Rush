@@ -1,14 +1,15 @@
 #pragma once
 
 #include "App/Data/Shaders/ShaderStructures.h"
-#include "MDS/Tools/Templates/Singleton.h"
+#include "MDS/Tools/System/IRProgramMemNode.h"
 #include "App/Data/Meshes/RSRMesh3D.h"
 #include "App/Data/Meshes/RSRMesh2D.h"
 #include <string>
 #include <string_view>
 namespace RSRush
 {
-	class RSRBasicShapes : public mds::Singleton<RSRBasicShapes>
+	class RSRProgramInstance;
+	class RSRBasicShapes : public mds::IRProgramMemElem
 	{
 	public:
 		static const std::string DEFAULT_SQUARE_NAME;
@@ -29,9 +30,10 @@ namespace RSRush
 		bool UploadResources(struct ID3D12Device10* InDevice, struct ID3D12GraphicsCommandList7* InUploadCommandList);
 		bool FreeUploadBuffers();
 		void Shutdown();
-public:
-	RSRBasicShapes(const RSRBasicShapes&) = delete;
-	RSRBasicShapes& operator=(const RSRBasicShapes&) = delete;
+
+	public:
+		static RSRBasicShapes* Get(const mds::IRProgramMemElem* InProgramMemElem);
+		static RSRBasicShapes* Get(RSRProgramInstance* InProgramInstance);
 
 	public:
 		const RSRush::RSRSharedMesh3DPtr& GetDefSquare() const { return m_defaultSquare; };
@@ -49,9 +51,12 @@ public:
 	RSRush::RSRSharedMesh2DPtr GetRegisterNewTriangle2D(const std::string_view InShapeName, const DirectX::XMFLOAT4& InVertexColor, const DirectX::XMFLOAT2& Pivot = { 0.f, 0.f }, const DirectX::XMFLOAT2& InTopLeft = { -1.f, -1.f }, const DirectX::XMFLOAT2& InBottomRight = { 1.f, 1.f }, uint32_t InTextureIndex = 0, RSRAssetManager* InAssetManager = nullptr);
 
 	RSRush::RSRSharedMesh3DPtr GetRegisterNewSphere(const std::string_view InShapeName, const DirectX::XMFLOAT3& InVertexColor, uint32_t InTextureIndex, RSRAssetManager* InAssetManager = nullptr);
-	protected:
-	RSRBasicShapes();
+
 	public:
-		friend class mds::Singleton<RSRBasicShapes>;
+		RSRBasicShapes(const RSRBasicShapes&) = delete;
+		RSRBasicShapes& operator=(const RSRBasicShapes&) = delete;
+	public:
+		RSRBasicShapes(RSRProgramInstance* InProgramInstance);
+		R_VIRTUAL_IMPLICIT ~RSRBasicShapes() R_OVERRIDE_IMPLICIT;
 	};
 }

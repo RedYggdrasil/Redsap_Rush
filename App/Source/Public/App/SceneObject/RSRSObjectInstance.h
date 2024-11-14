@@ -11,7 +11,7 @@ namespace RSRush
 		InstanceDatas m_instanceData;
 	public:
 		//const mds::RAssetAuthority InMainMeshAuthority, const bool bInIsHandledAsSObject, const bool bInIsDrawnAsInstance
-		RSRSObjectInstance(RSRush::RSRSharedMesh3DPtr InMesh, const RSRTransform& InTransform, InstanceDatas&& InInstanceData, const mds::RAssetAuthority InMainMeshAuthority, const bool bInIsHandledAsSObject, const bool bInIsDrawnAsInstance);
+		RSRSObjectInstance(RSRush::RSRSharedMesh3DPtr InMesh, const RSRTransform& InTransform, InstanceDatas&& InInstanceData, const mds::RAssetAuthority InMainMeshAuthority, const bool bInIsDrawnAsInstance);
 		RSRSObjectInstance(RSRush::RSRSharedMesh3DPtr InMesh, const RSRTransform& InTransform, InstanceDatas&& InInstanceData);
 		RSRSObjectInstance(RSRush::RSRSharedMesh3DPtr InMesh, InstanceDatas&& InInstanceData);
 		R_VIRTUAL_IMPLICIT ~RSRSObjectInstance() R_OVERRIDE_IMPLICIT;

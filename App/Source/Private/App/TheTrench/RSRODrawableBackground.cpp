@@ -7,14 +7,13 @@
 using namespace RSRush;
 using namespace DirectX;
 
-RSRODrawableBackground::RSRODrawableBackground(const RSRTransform& InTransform, const uint16_t InTextureID)
+RSRODrawableBackground::RSRODrawableBackground(RSRBasicShapes* InBasicShapes, const RSRTransform& InTransform, const uint16_t InTextureID)
 	:RSRSObjectInstance
 	(
-		/*Mesh*/RSRBasicShapes::Get().GetRegisterNewPlane(TEXT("BackgroundPlane"), XMFLOAT3(1.f, 1.f, 1.f), InTextureID, XMFLOAT2{ 5.f, 5.f }),
+		/*Mesh*/InBasicShapes->GetRegisterNewPlane(TEXT("BackgroundPlane"), XMFLOAT3(1.f, 1.f, 1.f), InTextureID, XMFLOAT2{ 5.f, 5.f }),
 		InTransform,
 		std::move(INIT_INSTANCE_DATA_EMISSIVE((uint8_t)InTextureID, 0.6f)),
 		mds::RAssetAuthority::Absolute,
-		/*bInIsHandledAsSObject*/true,
 		/*bInIsDrawnAsInstance*/true
 	)
 {

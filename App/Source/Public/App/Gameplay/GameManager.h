@@ -1,6 +1,7 @@
 #pragma once
 
 #include "MDS/RTool.h"
+#include "MDS/Tools/System/IRProgramMemNode.h"
 #include "App/Tools/Inputs/RSRUserInput.h"
 #include "App/Gameplay/PlayerController.h"
 
@@ -10,18 +11,27 @@
 namespace RSRush
 {
 	class RSRScene;
-	class GameManager : public IRSRUserInputProvider
+	class GameManager : public mds::IRProgramMemNode, public IRSRUserInputProvider
 	{
-	protected:
-		//Know
-		std::weak_ptr<RSRScene> m_owningScene;
 	protected:
 		//Owner
 		std::vector<std::shared_ptr<RSRush::PlayerController>> m_playerControllers;
-		virtual std::shared_ptr<RSRush::PlayerController> MakeSharedPCInstance() { return std::make_shared<RSRush::PlayerController>(); }
+		virtual std::shared_ptr<RSRush::PlayerController> MakeSharedPCInstance() { return PlayerController::CreatePlayerController<RSRush::PlayerController>(LockSelf<GameManager>()); }
 		virtual std::shared_ptr<RSRush::PlayerController> AddPlayerController();
 	public:
-		virtual void InitializeGame(std::weak_ptr<RSRScene> InScene);
+
+		template <class TRSRScene = RSRScene>
+		std::shared_ptr<TRSRScene> LockScene()
+		{
+			if (std::shared_ptr<TRSRScene> scene = std::static_pointer_cast<TRSRScene>(m_WPtrParentNode.lock()))
+			{
+				return scene;
+			}
+			return nullptr;
+		}
+
+	public:
+		virtual void InitializeGame(std::weak_ptr<RSRScene> InScene, std::weak_ptr<GameManager> InSelfWPtr);
 		virtual void ShutdownGame();
 		/// <summary>
 		/// Not executed on main tread, Compute new input and request new position

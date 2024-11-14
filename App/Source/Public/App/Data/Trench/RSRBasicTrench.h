@@ -17,12 +17,15 @@ namespace RSRush
 	{
 	protected:
 		std::shared_ptr<RSRTaskTrenchGeometry> m_GeometryTask;
+
 	public:
 		RSRBasicTrench(RSRTrenchManager* InTrenchManager);
 		/*virtual*/ ~RSRBasicTrench() /*override*/;
 		virtual void StartGeneratingMesh();
+
 	protected:
 		virtual void PositionSelf()/*pure_override*/;
+
 	protected:
 
 		virtual void GeneratingMeshInitialSetup();
@@ -35,7 +38,7 @@ namespace RSRush
 		virtual void GenerateGeometry();
 		virtual void GeneratePositionData();
 		virtual void GeneratePhysicColliders();
-	protected:
+
 	public:
 		friend struct RSRTaskBasicTrenchGeometry;
 	};

@@ -4,20 +4,20 @@
 
 using namespace RSRush;
 
-RSRPhysicBody* RSRIPhysicalEntity::GetPhysicalBodyPtr() const
+RSRPhysicBody* RSRIPhysicalEntity::GetPhysicalBodyPtr(RSRPhysicManager* InPhysicManager) const
 {
     if (m_physicalBodyKey.bHasBeenRegistered)
     {
-        return RSRPhysicManager::Get().GetPhysicBody(m_physicalBodyKey);
+        return InPhysicManager->GetPhysicBody(m_physicalBodyKey);
     }
     return nullptr;
 }
 
-void RSRush::RSRIPhysicalEntity::OnPhysicalPrePass(double InDeltaTime)
+void RSRush::RSRIPhysicalEntity::OnPhysicalPrePass(RSRPhysicManager* InPhysicManager, double InDeltaTime)
 {
     if (m_physicalBodyKey.bHasBeenRegistered && m_transformedPhysicalObjectData.bHasNewTransform)
     {
-        RSRPhysicBody* body = RSRPhysicManager::Get().GetPhysicBody(m_physicalBodyKey);
+        RSRPhysicBody* body = InPhysicManager->GetPhysicBody(m_physicalBodyKey);
         if (body)
         {
             body->Transform = m_transformedPhysicalObjectData.NewTransform;
@@ -33,7 +33,7 @@ void RSRush::RSRIPhysicalEntity::OnPhysicalPrePass(double InDeltaTime)
 }
 
 RSRush::RSRIPhysicalEntity::RSRIPhysicalEntity()
-    : m_lastResolvedPhysicBody(UNSET_PHYSIC_BODY), m_physicalBodyKey
+: /*m_physicManager(InPhysicManager),*/ m_lastResolvedPhysicBody(UNSET_PHYSIC_BODY), m_physicalBodyKey
     {
         .SelfEntity = std::weak_ptr<RSRIPhysicalEntity>(),
         .LastKnownIndex = std::numeric_limits<size_t>::max(),

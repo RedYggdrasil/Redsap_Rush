@@ -16,9 +16,9 @@ namespace RSRush
 		
 		std::shared_ptr<RSRush::RSROScene> ThisOScenePtr()
 		{
-			if (!m_thisWPtr.expired())
+			if (!m_WPtrSelfNode.expired())
 			{
-				return std::static_pointer_cast<RSRush::RSROScene>(m_thisWPtr.lock());
+				return std::static_pointer_cast<RSRush::RSROScene>(m_WPtrSelfNode.lock());
 			}
 			return nullptr;
 		}

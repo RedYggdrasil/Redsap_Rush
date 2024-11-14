@@ -5,10 +5,13 @@
 
 namespace RSRush
 {
+	class RSRPhysicManager;
 	class RSRIPhysicalEntity
 	{
 	private:
 		RSRPhysicBody m_lastResolvedPhysicBody;
+	protected:
+		//RSRPhysicManager* m_physicManager;
 	protected:
 		const RSRPhysicBody& GetLastResolvedPhysicBody() const { return m_lastResolvedPhysicBody; }
 	protected:
@@ -30,14 +33,14 @@ namespace RSRush
 		RSRPhysicBodyKey& GetEditKey() { return m_physicalBodyKey; }
 	private:
 		//Private because we are not suppose to get Physical Body during certain timeframes
-		RSRush::RSRPhysicBody* GetPhysicalBodyPtr() const;
+		RSRush::RSRPhysicBody* GetPhysicalBodyPtr(RSRPhysicManager* InPhysicManager) const;
 	public:
 		virtual void OnPhysicalPassEnded(const RSRPhysicBody& InResultPhysicalBody) {};
 		/// <summary>
 		/// Called to update m_WSPhysicalBody to new position this physical pass
 		/// </summary>
 		/// <param name="InDeltaTime">Delta time of the physical pass (may differ from frame delta time)</param>
-		virtual void OnPhysicalPrePass(double InDeltaTime);
+		virtual void OnPhysicalPrePass(RSRPhysicManager* InPhysicManager, double InDeltaTime);
 
 		virtual void OnOverlapWith(RSRIPhysicalEntity* InOther) {};
 		virtual void OnPhysicPassEnded(const RSRPhysicBody& InResolvedPhysicBody) { m_lastResolvedPhysicBody = InResolvedPhysicBody; };

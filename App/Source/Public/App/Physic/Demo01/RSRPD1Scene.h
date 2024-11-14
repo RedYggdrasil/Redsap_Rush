@@ -1,12 +1,14 @@
 #pragma once
 #include "MDS/RTool.h"
+#include "App/Game/RSRProgramInstance.h"
 #include "App/SceneObject/RSROScene.h"
-#include <App/Data/Textures/RSRTexture2D.h>
+#include "App/Data/Textures/RSRTexture2D.h"
 
 namespace RSRush
 {
 	//class RSRTT404Pawn;
 	//class RSRMesh2D;
+	class RSRTextureLibrary;
 	class RSRPD1Scene : public RSROScene
 	{
 		SCENE_CONSTRUCTOR(RSRPD1Scene);
@@ -23,8 +25,8 @@ namespace RSRush
 
 
 #pragma region Textures
-		std::vector<RSRSharedTexture2DPtr> m_2dTextures;
-		std::vector<RSRSharedTexture2DPtr> m_3dTextures;
+		std::shared_ptr<RSRTextureLibrary> m_2dTextures;
+		std::shared_ptr<RSRTextureLibrary> m_3dTextures;
 
 		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_srvheap3D;
 		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_srvheap2D;

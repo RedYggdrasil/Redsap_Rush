@@ -1,5 +1,7 @@
 #include "App/Physic/Demo01/Gameplay/RSRPD1PlayerController.h"
 #include "App/Managers/RSRPhysicManager.h"
+#include "App/Physic/Demo01/Gameplay/RSRPD1GameManager.h"
+#include "App/Physic/Demo01/RSRPD1Scene.h"
 #include <App/Tools/RSRLog.h>
 
 using namespace RSRush;
@@ -41,9 +43,10 @@ DirectX::XMFLOAT2 RSRush::RSRPD1PlayerController::GetEAxis2D(EAxis2D EInAxis2D) 
 }
 
 RSRPD1PlayerController::RSRPD1PlayerController()
-	:PlayerController(), m_bIsInitialized(false)
+: PlayerController(), m_bIsInitialized(false)
 {
 }
+
 bool RSRush::RSRPD1PlayerController::PrePassTick(const double InGameTime, const double InDeltaTime)
 {
 	constexpr float defaultSpeed = 20.f;
@@ -95,42 +98,64 @@ bool RSRush::RSRPD1PlayerController::PrePassTick(const double InGameTime, const 
 	lMovement = lMovement * Speed * (float)InDeltaTime;
 	XMStoreFloat3(&movement, lMovement);
 
-	if (m_bIsInitialized && m_pD1Pawn)
+	
+	if (m_bIsInitialized) { if (std::shared_ptr<RSRPD1Pawn> pD1Pawn = m_pD1Pawn.lock())
 	{
-		m_pD1Pawn->PrepassRequestMovement(movement);
-		m_pD1Pawn->PrepassRequestMovementLook(lookMovement);
-		m_pD1Pawn->OnInputFrameEnded();
-	}
+		pD1Pawn->PrepassRequestMovement(movement);
+		pD1Pawn->PrepassRequestMovementLook(lookMovement);
+		pD1Pawn->OnInputFrameEnded();
+	}}
+
 	bool AllSucessfull = true;
-	if (m_bIsInitialized && m_pD1Pawn && !m_pD1Pawn->GetIsHandledAsSObject())
-	{
-		AllSucessfull = m_pD1Pawn->PrePassTick(InGameTime, InDeltaTime) && AllSucessfull;
-	}
+	//if (m_bIsInitialized && m_pD1Pawn && !m_pD1Pawn->GetIsHandledAsSObject())
+	//{
+	//	AllSucessfull = m_pD1Pawn->PrePassTick(InGameTime, InDeltaTime) && AllSucessfull;
+	//}
 	return AllSucessfull;
 }
 bool RSRush::RSRPD1PlayerController::LateTickSync(const double InGameTime, const double InDeltaTime)
 {
 	bool AllSucessfull = true;
-	if (m_bIsInitialized && m_pD1Pawn && !m_pD1Pawn->GetIsHandledAsSObject())
-	{
-		AllSucessfull = m_pD1Pawn->LateTickSync(InGameTime, InDeltaTime) && AllSucessfull;
-	}
+	//if (m_bIsInitialized && m_pD1Pawn && !m_pD1Pawn->GetIsHandledAsSObject())
+	//{
+	//	AllSucessfull = m_pD1Pawn->LateTickSync(InGameTime, InDeltaTime) && AllSucessfull;
+	//}
 	return AllSucessfull;
 }
-void RSRush::RSRPD1PlayerController::Initialize()
+bool RSRush::RSRPD1PlayerController::Initialize()
 {
-	m_pD1Pawn = std::make_shared<RSRPD1Pawn>();
-	m_pD1Pawn->SetSelfReference(m_pD1Pawn);
-	PocessPawn(m_pD1Pawn.get());
-	RSRush::RSRPhysicManager::Get().AddPhysicalEntity(m_pD1Pawn->GeneratePhysicBody());
-	m_bIsInitialized = true;
+	if (auto gm = LockGameManager<RSRPD1GameManager>())
+	{
+		if (auto scene = gm->LockScene<RSRPD1Scene>())
+		{
+			m_pD1Pawn = scene->AddNewSObject(std::make_shared<RSRPD1Pawn>());
+			std::shared_ptr<RSRPD1Pawn> pawn = m_pD1Pawn.lock();
+			//pawn->SetSelfReference(m_pD1Pawn);
+
+			PocessPawn(pawn.get());
+			m_bIsInitialized = true;
+		}
+	}
+	return m_bIsInitialized;	
 }
+
 void RSRush::RSRPD1PlayerController::Shutdown()
 {
 	if (m_pawn)
 	{
-		RSRush::RSRPhysicManager::Get().RemovePhysicalEntity(m_pD1Pawn->GetEditKey());
+		auto pd1Pawn = m_pD1Pawn;
 		UnpocessPawn();
+
+		if (!pd1Pawn.expired())
+		{
+			if (std::shared_ptr<RSRPD1GameManager> gm = LockGameManager<RSRPD1GameManager>())
+			{
+				if (auto scene = gm->LockScene<RSRPD1Scene>())
+				{
+					scene->RemoveSObject(pd1Pawn);
+				}
+			}
+		}
 	}
 	m_bIsInitialized = false;
 }
@@ -142,7 +167,7 @@ bool RSRush::RSRPD1PlayerController::ReceiveKey(bool bIsDown, WPARAM InKey)
 void RSRush::RSRPD1PlayerController::PocessPawn(Pawn* InPawn)
 {
 	ApplyDefaultActionBinding();
-	if (InPawn && m_pD1Pawn.get() != InPawn)
+	if (InPawn && (m_pD1Pawn.expired() ||  m_pD1Pawn.lock().get() != InPawn))
 	{
 		RSRLog::Log(LOG_EXCEPTION, TEXT("RSRPD1PlayerController Only handle self created PD1 Pawn !"));
 		return;

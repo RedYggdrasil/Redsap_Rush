@@ -225,20 +225,25 @@ bool RSRush::RSRMesh::DrawMesh(ID3D12GraphicsCommandList7* InUploadCommandList, 
     //will this return temp ?
     if (m_bApplyTransformationMatrix)
     {
-        //MVPDLC::S32B_MOD_MAT
-        InUploadCommandList->SetGraphicsRoot32BitConstants(0, MVPDLC::S32B_MOD_MAT, &InPinnedTransformMatrix.GetMatrix(), MVPDLC::O32B_MOD_MAT);
-
-        //Compute InverseTranspose matrix for normal computations
-        RSRTransformMatrix NoTranslationMatrix = InPinnedTransformMatrix;
-        NoTranslationMatrix.SetPositon(DirectX::XMFLOAT3(0.f, 0.f, 0.f));
-
-        DirectX::XMMATRIX TransformMatrix = DirectX::XMLoadFloat4x4(&NoTranslationMatrix.GetMatrix());
-        DirectX::XMMATRIX InverseTranspose = mds::RMath::InverseTranspose(TransformMatrix);
-
-        DirectX::XMFLOAT4X4  StoredInverseTranspose;
-        DirectX::XMStoreFloat4x4(&StoredInverseTranspose, InverseTranspose);
-
-        InUploadCommandList->SetGraphicsRoot32BitConstants(0, MVPDLC::S32B_INV_MOD_MAT, &StoredInverseTranspose, MVPDLC::O32B_INV_MOD_MAT);
+        ApplyTransformToRootSig(InUploadCommandList, InPinnedTransformMatrix);
     }
     return DrawMesh(InUploadCommandList, InInstanceCount);
+}
+
+void RSRush::RSRMesh::ApplyTransformToRootSig(ID3D12GraphicsCommandList7* InUploadCommandList, const RSRTransformMatrix& InPinnedTransformMatrix)
+{
+    //MVPDLC::S32B_MOD_MAT
+    InUploadCommandList->SetGraphicsRoot32BitConstants(0, MVPDLC::S32B_MOD_MAT, &InPinnedTransformMatrix.GetMatrix(), MVPDLC::O32B_MOD_MAT);
+
+    //Compute InverseTranspose matrix for normal computations
+    RSRTransformMatrix NoTranslationMatrix = InPinnedTransformMatrix;
+    NoTranslationMatrix.SetPositon(DirectX::XMFLOAT3(0.f, 0.f, 0.f));
+
+    DirectX::XMMATRIX TransformMatrix = DirectX::XMLoadFloat4x4(&NoTranslationMatrix.GetMatrix());
+    DirectX::XMMATRIX InverseTranspose = mds::RMath::InverseTranspose(TransformMatrix);
+
+    DirectX::XMFLOAT4X4  StoredInverseTranspose;
+    DirectX::XMStoreFloat4x4(&StoredInverseTranspose, InverseTranspose);
+
+    InUploadCommandList->SetGraphicsRoot32BitConstants(0, MVPDLC::S32B_INV_MOD_MAT, &StoredInverseTranspose, MVPDLC::O32B_INV_MOD_MAT);
 }

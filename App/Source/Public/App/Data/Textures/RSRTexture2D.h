@@ -50,6 +50,8 @@ namespace RSRush
 		RSRTexture2D(const std::filesystem::path& InImagePath);
 		RSRTexture2D(l_ComPtr<ID3D12Resource2> InLoadedGPUResource, const ImageLoader::ImageData& InData);
 
+		inline void SetTextureIndex(const uint16_t InIndex) { m_indexInSRVTable = InIndex; }
+		inline uint16_t GetTextureIndex() const { return (uint16_t)m_indexInSRVTable; }
 	public:
 		/*virtual*/~RSRTexture2D()/*override*/;
 	public:

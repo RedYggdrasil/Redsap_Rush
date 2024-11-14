@@ -35,9 +35,9 @@ void RSRush::RSRVoxelObstacle::ClearPlacementData()
 	m_apd = AttemptPlacementData(RSRTransformMatrix(RSRTransform()), nullptr, nullptr, nullptr);
 }
 
-bool RSRVoxelObstacle::AttemptPlacement(std::mt19937_64& InOutGenerator, RSRVoxalGrid& InOutGrid, const RSRush::RSRTransformMatrix& InTransformMatrix, uint8_t InMaxAttemptCount)
+bool RSRVoxelObstacle::AttemptPlacement(RSRPhysicManager* InPhysicManager, std::mt19937_64& InOutGenerator, RSRVoxalGrid& InOutGrid, const RSRush::RSRTransformMatrix& InTransformMatrix, uint8_t InMaxAttemptCount)
 {
-	return this->AttemptPlacement(InOutGenerator, InOutGrid, InTransformMatrix, RSRVoxelRectangle{ .Min = InOutGrid.Min(), .Max = InOutGrid.Max() }, InMaxAttemptCount);
+	return this->AttemptPlacement(InPhysicManager, InOutGenerator, InOutGrid, InTransformMatrix, RSRVoxelRectangle{ .Min = InOutGrid.Min(), .Max = InOutGrid.Max() }, InMaxAttemptCount);
 }
 
 RSRVoxelObstacle* RSRVoxelObstacle::HeapCreateNewObstacle(std::mt19937_64* InOutGenerator)
@@ -61,7 +61,7 @@ RSRVoxelObstacle* RSRVoxelObstacle::HeapCreateNewObstacle(const EObstacleType In
 	}
 }
 
-bool RSRush::RSRVoxelObstacle::AvalableVoxelSpace(const RSRVoxelRectangle& InVoxelSpace)
+bool RSRush::RSRVoxelObstacle::AvalableVoxelSpace(RSRPhysicManager* InPhysicManager, const RSRVoxelRectangle& InVoxelSpace)
 {
     RSRCollidersBody& localBody = m_apd.lp_PhysicBodyPair->DirtyGetLocal();
 	localBody.Behavior = TEST_HAZARD_PLACEMENT;
@@ -80,5 +80,5 @@ bool RSRush::RSRVoxelObstacle::AvalableVoxelSpace(const RSRVoxelRectangle& InVox
 
     m_apd.lp_PhysicBodyPair->RecomputeWorld(*m_apd.lp_loadedTRSMatrix, true);
 
-	return !RSRPhysicManager::Get().IsOverlappingAny(m_apd.lp_PhysicBodyPair->GetWorld(), std::weak_ptr<RSRIPhysicalEntity>());
+	return !InPhysicManager->IsOverlappingAny(m_apd.lp_PhysicBodyPair->GetWorld(), std::weak_ptr<RSRIPhysicalEntity>());
 }

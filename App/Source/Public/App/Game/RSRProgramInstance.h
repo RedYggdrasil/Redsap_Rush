@@ -2,22 +2,29 @@
 
 #define NOMINMAX
 #include "Gen_App/Config/AppConfig.h"
+#include "MDS/Tools/REnum.h"
+#include "MDS/Tools/RCollection.h"
+#include "MDS/Tools/System/IRProgramRoot.h"
 
 #include "App/Libs/WinInclude.h"
 #include "MDS/Tools/Templates/Singleton.h"
+#include "App/Tools/Window.h"
 #include "App/Gameplay/RSRScene.h"
+#include "App/Geometry/RSRMeshLoader.h"
+#include "App/Managers/RSRAssetManager.h"
+#include "App/Managers/RSRPhysicManager.h"
+#include "App/Geometry/RSRBasicShapes.h"
+#include "App/Tools/Inputs/RSRGameInput.h"
 
-#include <memory>
-#include <unordered_set>
-#include "MDS/Tools/REnum.h"
-#include "MDS/Tools/RCollection.h"
-
-#include <wrl/client.h>
 #include <limits>
-
+#include <memory>
 #include <mutex>
-#include <thread>
 #include <queue>
+#include <unordered_set>
+#include <thread>
+#include <wrl/client.h>
+
+#define RSRPI_INCLUDED 
 
 class Shader;
 namespace RSRush
@@ -36,9 +43,9 @@ namespace RSRush
 		size_t GameInputControllerSilent = 0;
 		bool bTearingSupported = false;
 	};
-	class RSRRandomizer;
 	class RSRPipelines;
-	class RSRProgramInstance : public mds::Singleton<RSRProgramInstance>
+	class RSRRandomizer;
+	class RSRProgramInstance : public mds::IRProgramRoot
 	{
 	protected:
 		struct FrameData
@@ -75,6 +82,14 @@ namespace RSRush
 		std::unique_ptr<RSRush::RSRRandomizer> m_randomizer;
 		std::unique_ptr<RSRush::RSRPipelines> m_pipelines;
 
+		RSRush::RSRAssetManager m_assetManager;
+		RSRush::RSRBasicShapes m_basicShapes;
+		DXContext m_dxContext;
+		DXWindow m_dxWindow;
+		RSRush::RSRGameInput m_gameInput;
+		RSRush::RSRMeshLoader m_meshLoader;
+		RSRush::RSRPhysicManager m_physicManager;
+
 #pragma region PSOs
 		public:
 		Microsoft::WRL::ComPtr<ID3D12RootSignature> GetRootSig2D() const;
@@ -96,16 +111,26 @@ namespace RSRush
 
 	public:
 		inline const RSRPIStatistics& GetPIStatistics() const { return m_piStatistics; }
+
+		inline const RSRAssetManager* GetAssetManager() const { return &m_assetManager; }
+		inline RSRAssetManager* GetAssetManager()  { return &m_assetManager; }
+		inline RSRBasicShapes* GetBasicShapes() { return &m_basicShapes; }
+		inline DXContext* GetDXContect() { return &m_dxContext; }
+		inline DXWindow* GetDXWindow() { return &m_dxWindow; }
+		inline RSRMeshLoader* GetMeshLoader() { return &m_meshLoader; }
+		inline RSRPhysicManager* GetPhysicManager() { return &m_physicManager; }
+
+
 		inline void ReportSilentGameInputController() 
 		{ if (m_piStatistics.GameInputControllerSilent < std::numeric_limits<int>::max()) { ++m_piStatistics.GameInputControllerSilent; } }
 		inline void SetTearingSupported(const bool InbTearingSupported) { m_piStatistics.bTearingSupported = InbTearingSupported; }
 #pragma endregion Statistics
 
 	protected:
+	public:
+		R_VIRTUAL_IMPLICIT ~RSRProgramInstance() R_OVERRIDE_IMPLICIT;
+	public:
 		RSRProgramInstance();
-	public:
-		virtual ~RSRProgramInstance();
-	public:
 		void Run(int argc, char** argv);
 		void InitializeProgram();
 		void ShutdownProgram();

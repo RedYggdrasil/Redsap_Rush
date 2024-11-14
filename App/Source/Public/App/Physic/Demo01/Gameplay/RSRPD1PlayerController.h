@@ -2,15 +2,16 @@
 #include "MDS/Defines/MDS.h"
 #include "App/Gameplay/PlayerController.h"
 #include "App/Physic/Demo01/Gameplay/RSRPD1Pawn.h"
+#include <memory>
 
 namespace RSRush
 {
+	class RSRPD1GameManager;
 	class RSRPD1PlayerController : public PlayerController
 	{
 	private:
 		bool m_bIsInitialized;
-		std::shared_ptr<RSRPD1Pawn> m_pD1Pawn = nullptr;
-		inline std::shared_ptr<RSRPD1Pawn> GetPD1Pawn() const { return m_pD1Pawn; }
+		std::weak_ptr<RSRPD1Pawn> m_pD1Pawn;
 	public:
 		static constexpr size_t MAX_ACTION_BOUND_KEYS = 8;
 	protected:
@@ -36,6 +37,8 @@ namespace RSRush
 		EMDSAxis2DType m_axis2DToInputKeyTypes[mds::UT_cast(EAxis2D::COUNT)][MAX_ACTION_BOUND_KEYS];
 
 	protected:
+		
+	protected:
 		bool GetIsActiveAction(EAction EInAction) const;
 		DirectX::XMFLOAT2 GetEAxis2D(EAxis2D EInAxis2D) const;
 	public:
@@ -46,7 +49,7 @@ namespace RSRush
 		virtual bool PrePassTick(const double InGameTime, const double InDeltaTime) override;
 		virtual bool LateTickSync(const double InGameTime, const double InDeltaTime) override;
 
-		void Initialize();
+		bool Initialize();
 		void Shutdown();
 	public:
 		//Interfaces IInputListener

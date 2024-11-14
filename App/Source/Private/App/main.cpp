@@ -56,6 +56,7 @@ using Microsoft::WRL::ComPtr;
 
 int main(int argc, char** argv) 
 {
-    RSRush::RSRProgramInstance::Get().Run(argc, argv);
+    RSRush::RSRProgramInstance program; 
+    program.Run(argc, argv);
     return 0;
 }

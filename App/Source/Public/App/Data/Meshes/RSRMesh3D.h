@@ -2,6 +2,7 @@
 
 #include "App/Data/Meshes/RSRMesh.h"
 #include "MDS/Tools/RCoordinate.h"
+#include <filesystem>
 #include <vector>
 
 namespace RSRush
@@ -28,6 +29,8 @@ namespace RSRush
 
 		RSRMesh3D(const std::vector<VertexPositionUVColor>& InVertexes, const std::vector<unsigned short>& InIndexes);
 		RSRMesh3D(std::vector<VertexPositionUVColor>&& InVertexes, std::vector<unsigned short>&& InIndexes);
+
+		RSRMesh3D(const std::filesystem::path& InImagePath);
 
 		/*virtual*/~RSRMesh3D()/*override*/;
 	private:

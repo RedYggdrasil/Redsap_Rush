@@ -35,7 +35,7 @@ namespace RSRush
 
 	public:
 		//Implemented via RSRIPhysicalEntity
-		virtual void OnPhysicalPrePass(double InDeltaTime) override;
+		virtual void OnPhysicalPrePass(RSRPhysicManager* InPhysicManager, double InDeltaTime) override;
 		virtual void OnOverlapWith(RSRIPhysicalEntity* InOther) override;
 	};
 };

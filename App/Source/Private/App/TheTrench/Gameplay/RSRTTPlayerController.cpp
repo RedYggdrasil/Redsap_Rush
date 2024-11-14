@@ -119,10 +119,10 @@ bool RSRush::RSRTTPlayerController::PrePassTick(const double InGameTime, const d
 	Get404Pawn()->OnInputFrameEnded();
 
 	bool AllSucessfull = true;
-	if (!Get404Pawn()->GetIsHandledAsSObject())
-	{
-		AllSucessfull = Get404Pawn()->PrePassTick(InGameTime, InDeltaTime) && AllSucessfull;
-	}
+	//if (!Get404Pawn()->GetIsHandledAsSObject())
+	//{
+	//	AllSucessfull = Get404Pawn()->PrePassTick(InGameTime, InDeltaTime) && AllSucessfull;
+	//}
 	return AllSucessfull;
 }
 
@@ -133,10 +133,10 @@ bool RSRush::RSRTTPlayerController::LateTickSync(const double InGameTime, const 
 	{
 		return AllSucessfull;
 	}
-	if (!Get404Pawn()->GetIsHandledAsSObject())
-	{
-		AllSucessfull = Get404Pawn()->LateTickSync(InGameTime, InDeltaTime) && AllSucessfull;
-	}
+	//if (!Get404Pawn()->GetIsHandledAsSObject())
+	//{
+	//	AllSucessfull = Get404Pawn()->LateTickSync(InGameTime, InDeltaTime) && AllSucessfull;
+	//}
 	return AllSucessfull;
 }
 
@@ -214,4 +214,13 @@ void RSRush::RSRTTPlayerController::ApplyDefaultActionBinding()
 
 	m_axis2DToInputKeyTypes[mds::UT_cast(EAxis2D::Mouse2D_FRAME_MVMT)][0] = EMDSAxis2DType::MDS_A2D_MS_FRAME;
 	m_axis2DToInputKeyTypes[mds::UT_cast(EAxis2D::Mouse2D_FRAME_MVMT)][1] = EMDSAxis2DType::MDS_A2D_GMPD_LEFT_STICK;
+}
+
+RSRTTPlayerController::RSRTTPlayerController()
+: PlayerController()
+{
+}
+
+RSRTTPlayerController::~RSRTTPlayerController()
+{
 }

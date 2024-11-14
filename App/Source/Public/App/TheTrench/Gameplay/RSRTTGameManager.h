@@ -13,12 +13,12 @@ namespace RSRush
 	protected:
 		std::shared_ptr<RSRush::RSRPlayerPath> m_playerPath;
 	protected:
-		virtual std::shared_ptr<RSRush::PlayerController> MakeSharedPCInstance() override { return std::make_shared<RSRTTPlayerController>(); }
+		virtual std::shared_ptr<RSRush::PlayerController> MakeSharedPCInstance() override { return PlayerController::CreatePlayerController<RSRush::RSRTTPlayerController>(LockSelf<RSRTTGameManager>()); }
 
 	public:
 		double GetPrePassProgression() const;
 	public:
-		virtual void InitializeGame(std::weak_ptr<RSRScene> InScene) override;
+		virtual void InitializeGame(std::weak_ptr<RSRScene> InScene, std::weak_ptr<GameManager> InSelfWPtr) override;
 		virtual void ShutdownGame() override;
 		virtual bool PrePassTick(const double InGameTime, const double InDeltaTime) override;
 		virtual bool LateTickSync(const double InGameTime, const double InDeltaTime) override;

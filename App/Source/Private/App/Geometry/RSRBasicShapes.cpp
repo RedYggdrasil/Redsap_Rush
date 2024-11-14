@@ -1,5 +1,6 @@
 #include "App/Geometry/RSRBasicShapes.h"
 #include "App/Data/Meshes/RSRMesh3D.h"
+#include "App/Game/RSRProgramInstance.h"
 #include "App/Managers/RSRAssetManager.h"
 #include "MDS/Tools/RCoordinate.h"
 #include "App/Tools/RSRLog.h"
@@ -93,11 +94,21 @@ void RSRBasicShapes::Shutdown()
     m_defaultSquare.reset();
 }
 
+RSRBasicShapes* RSRush::RSRBasicShapes::Get(const mds::IRProgramMemElem* InProgramMemElem)
+{
+    return InProgramMemElem->GetRoot<RSRProgramInstance>()->GetBasicShapes();
+}
+
+RSRBasicShapes* RSRush::RSRBasicShapes::Get(RSRProgramInstance* InProgramInstance)
+{
+    return InProgramInstance->GetBasicShapes();
+}
+
 RSRSharedMesh3DPtr RSRBasicShapes::GetRegisterNewSquare(const std::string_view InShapeName, const XMFLOAT3& InVertexColor, uint32_t InTextureIndex, RSRAssetManager* InAssetManager)
 {
     if (!InAssetManager)
     {
-        InAssetManager = &RSRAssetManager::Get();
+        InAssetManager = RSRAssetManager::Get(this);
     }
     return
         InAssetManager->AddAsset<RSRMesh3D>
@@ -168,7 +179,7 @@ RSRush::RSRSharedMesh3DPtr RSRush::RSRBasicShapes::GetRegisterNewPlane(const std
 
 RSRush::RSRSharedMesh3DPtr RSRush::RSRBasicShapes::GetRegisterNewPlane(const std::string_view InShapeName, const DirectX::XMFLOAT3& InVertexColor, uint32_t InTextureIndex, const DirectX::XMFLOAT2& InMinUV, const DirectX::XMFLOAT2& InMaxUV, RSRAssetManager* InAssetManager)
 {
-    return RSRAssetManager::Get().AddAsset<RSRMesh3D>
+    return RSRAssetManager::Get(this)->AddAsset<RSRMesh3D>
         (
             mds::NameDynamicAsset(mds::RAssetType::Mesh, InShapeName),
             false,
@@ -212,7 +223,7 @@ RSRSharedMesh2DPtr RSRBasicShapes::GetRegisterNewPlane2D(const std::string_view 
 {
     if (!InAssetManager)
     {
-        InAssetManager = &RSRAssetManager::Get();
+        InAssetManager = RSRAssetManager::Get(this);
     }
     return InAssetManager->AddAsset<RSRMesh2D>
         (
@@ -257,7 +268,7 @@ RSRush::RSRSharedMesh2DPtr RSRush::RSRBasicShapes::GetRegisterNewTriangle2D(cons
 {
     if (!InAssetManager)
     {
-        InAssetManager = &RSRAssetManager::Get();
+        InAssetManager = RSRAssetManager::Get(this);
     }
     return InAssetManager->AddAsset<RSRMesh2D>
         (
@@ -295,7 +306,7 @@ RSRush::RSRSharedMesh3DPtr RSRush::RSRBasicShapes::GetRegisterNewSphere(const st
 {
     if (!InAssetManager)
     {
-        InAssetManager = &RSRAssetManager::Get();
+        InAssetManager = RSRAssetManager::Get(this);
     }
     std::vector<VertexPositionUVColor> verices;
     std::vector<uint16_t> triangles;
@@ -310,6 +321,16 @@ RSRush::RSRSharedMesh3DPtr RSRush::RSRBasicShapes::GetRegisterNewSphere(const st
             triangles
         );
 }
+
+RSRBasicShapes::RSRBasicShapes(RSRProgramInstance* InProgramInstance)
+: mds::IRProgramMemElem(InProgramInstance)
+{
+}
+
+RSRBasicShapes::~RSRBasicShapes()
+{
+}
+
 //Longitude is +1 because last vertex Longitude is first vertex Longitude but with different UVs
 constexpr int32_t SphereVertexArrayLenght(const int32_t InNbLatitude, const int32_t InNbLongitude) { return InNbLatitude * (InNbLongitude + 1); }
 
@@ -432,11 +453,4 @@ bool CreateSphereTriangleArray(int32_t InNbLatitude, int32_t InNbLongitude, std:
 
     RSRLog::Log(LOG_DISPLAY, TEXT("array size : '{}', last index : '{}'"), OutTriangleArray.size(), t_lastIDX);
     return true;
-}
-
-
-RSRBasicShapes::RSRBasicShapes()
-:mds::Singleton<RSRBasicShapes>()
-{
-
 }

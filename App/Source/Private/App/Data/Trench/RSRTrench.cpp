@@ -1,7 +1,8 @@
 ﻿#include "App/Data/Trench/RSRTrench.h"
+#include "App/Game/RSRPlayerPath.h"
+#include "App/Managers/RSRTrenchManager.h"
 #include "App/Tools/RSRLog.h"
 
-#include "App/Game/RSRPlayerPath.h"
 
 using namespace RSRush;
 

@@ -7,6 +7,12 @@ set(ALL_TARGETS "App" "MDS")
 
 option( TRACY_ENABLE "" ON)
 
+OPTION( BUILD_SHARED_LIBS
+  "Build package with shared libraries."
+  OFF
+)
+OPTION( ASSIMP_BUILD_ZLIB "" ON)
+
 # Include sub-projects.
 
 # CMake libraries

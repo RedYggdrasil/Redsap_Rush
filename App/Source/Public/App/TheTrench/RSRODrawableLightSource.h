@@ -3,10 +3,11 @@
 
 namespace RSRush
 {
+	class RSRBasicShapes;
 	class RSRODrawableLightSource : public RSRSObject
 	{
 	public:
-		RSRODrawableLightSource(const RSRTransform& InTransform, const bool bInHandleAsSObject, const uint16_t InTextureID);
+		RSRODrawableLightSource(RSRBasicShapes* BasicShapes, const RSRTransform& InTransform, const uint16_t InTextureID);
 		R_VIRTUAL_IMPLICIT ~RSRODrawableLightSource() R_OVERRIDE_IMPLICIT;
 
 		////Handled as instanced now

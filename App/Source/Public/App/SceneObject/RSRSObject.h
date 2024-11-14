@@ -2,27 +2,32 @@
 #include "App/Data/Meshes/RSRMesh3D.h"
 #include "MDS/Tools/Assets/RAsset.h"
 #include "MDS/Tools/RResourceStateType.h"
+#include "MDS/Tools/System/IRProgramMemNode.h"
 #include "App/Data/RSRTransform.h"
 
 
 namespace RSRush
 {
 	class RSROScene;
-	class RSRSObject
+	class RSRSObject : public mds::IRProgramMemNode
 	{
 	protected:
-		bool m_bIsHandledAsSObject;
 		bool m_bIsDrawnAsInstance;
 		RSRush::RSRTransformMatrix m_mainTransform;
 		mds::RAssetAuthority m_mainMeshAuthority;
 		RSRush::RSRSharedMesh3DPtr m_mainMesh;
+
+		template <class TOScene = RSROScene>
+		std::shared_ptr<TOScene> LockScene()
+		{
+			return std::static_pointer_cast<TOScene>(m_WPtrParentNode);
+		}
+
 	public:
-		inline bool GetIsHandledAsSObject() const { return m_bIsHandledAsSObject; }
 		inline bool GetIsDrawnAsInstance() const { return m_bIsDrawnAsInstance; }
 		inline const RSRush::RSRTransformMatrix& GetTrsMat() const { return m_mainTransform; }
 		RSRSObject(const mds::RAssetAuthority InMainMeshAuthority);
-		RSRSObject(const mds::RAssetAuthority InMainMeshAuthority, const bool bInIsHandledAsSObject);
-		RSRSObject(const mds::RAssetAuthority InMainMeshAuthority, const bool bInIsHandledAsSObject, const bool bInIsDrawnAsInstance);
+		RSRSObject(const mds::RAssetAuthority InMainMeshAuthority, const bool bInIsDrawnAsInstance);
 		virtual ~RSRSObject();
 		/// <summary>
 		/// Not executed on main tread, Compute new input and request new position

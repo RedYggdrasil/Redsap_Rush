@@ -1,17 +1,18 @@
 #pragma once
 
 #include "App/Libs/WinInclude.h"
-//#include "App/Tools/ComPointer.hpp"
+#include "MDS/Tools/System/IRProgramMemNode.h"
+
 
 #include <wrl/client.h>
 
-
-
-class DXContext
+namespace RSRush
 {
-private:
-	static DXContext Instance;
+	class RSRProgramInstance;
+}
 
+class DXContext : public mds::IRProgramMemElem
+{
 private:
 	Microsoft::WRL::ComPtr<IDXGIFactory7> m_factory;
 	Microsoft::WRL::ComPtr<ID3D12Device10> m_device;
@@ -46,6 +47,9 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> m_frameUploadCmdAllocator;
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList7> m_frameUploadCmdList;
 
+public:
+	static DXContext* Get(mds::IRProgramMemElem* InProgramMemElem);
+	static DXContext* Get(RSRush::RSRProgramInstance* InProgramInstance);
 public:
 	bool Init();
 	void Shutdown();
@@ -101,11 +105,7 @@ private:
 public:
 	DXContext(const DXContext&) = delete;
 	DXContext& operator=(const DXContext&) = delete;
-	inline static DXContext& Get()
-	{
-		return Instance;
-	}
 
-private:
-	DXContext() = default;
+public:
+	DXContext(RSRush::RSRProgramInstance* InProgramInstance);
 };

@@ -3,7 +3,7 @@
 #define NOMINMAX
 #include <vector>
 #include <memory>
-#include "MDS/Tools/Templates/Singleton.h"
+#include "MDS/Tools/System/IRProgramMemNode.h"
 #include "App/Data/Meshes/RSRMesh3D.h"
 #include "App/Data/Physic/RSRIPhysicalEntity.h"
 #include "App/Data/Physic/RSRPhysicContext.h"
@@ -14,7 +14,10 @@
 #include <mutex>
 namespace RSRush
 {
-	class RSRPhysicManager : public mds::Singleton<RSRPhysicManager>
+	class RSRBasicShapes;
+	class RSRProgramInstance;
+
+	class RSRPhysicManager : public mds::IRProgramMemElem
 	{
 	private:
 		size_t m_optimisation_count_reindexing = 0;
@@ -48,10 +51,14 @@ namespace RSRush
 		void LateTickSync(const double InGameTime, const  double InDeltaTime);
 
 	public:
+		static RSRPhysicManager* Get(const mds::IRProgramMemElem* InProgramMemElem);
+		static RSRPhysicManager* Get(RSRProgramInstance* InProgramInstance);
+	public:
+		RSRPhysicManager();
 		RSRPhysicManager(const RSRPhysicManager&) = delete;
 		RSRPhysicManager& operator=(const RSRPhysicManager&) = delete;
 
-		bool Init(class RSRBasicShapes* InBasicShapes);
+		bool Init(RSRProgramInstance* InProgramInstance, class RSRBasicShapes* InBasicShapes);
 		void Shutdown();
 	public :
 		std::vector<std::shared_ptr<RSRIPhysicalEntity>> FindOverlappedEntities(const RSRCollidersBody& InCollidersBody, const std::weak_ptr<RSRIPhysicalEntity> InEntityToIgnore, const size_t InMaxReturnedObject = std::numeric_limits<size_t>::max()) const;
@@ -63,10 +70,7 @@ namespace RSRush
 	protected:
 		std::vector<std::pair<size_t, size_t>> ComputeOverlaping();
 		
-		RSRPhysicManager();
 	public:
-		friend class mds::Singleton<RSRPhysicManager>;
-
 		inline RSRPhysicBody* GetPhysicBody(const RSRPhysicBodyKey& InKey)
 		{
 			if (PlausibleIndex(InKey)) { return &m_physicalBodies[InKey.LastKnownIndex]; }

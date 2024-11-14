@@ -1,25 +1,25 @@
 #pragma once
-#include "MDS/RTool.h"
-//#include "App/Gameplay/RSRScene.h"
 #include "App/SceneObject/RSROScene.h"
-#include <App/Data/Textures/RSRTexture2D.h>
+#include "App/Game/RSRProgramInstance.h"
 
 namespace RSRush
 {
 	class RSRTT404Pawn;
 	class RSRMesh2D;
+	class RSRTexture2D;
+	class RSRTextureLibrary;
 	class RSRTTScene : public RSROScene
 	{
 		SCENE_CONSTRUCTOR(RSRTTScene);
 	protected:
-		std::shared_ptr<RSRush::RSRTT404Pawn> m_playerPawn;
+		std::weak_ptr<RSRush::RSRTT404Pawn> m_playerPawn;
 		std::shared_ptr<RSRush::RSRMesh2D> m_topLeftSquare2D;
 		std::weak_ptr<class RSRODrawableLightSource> m_drawableLightSource;
 		std::shared_ptr<class RSRTrenchManager> m_trenchManager;
 
 #pragma region Textures
-		std::vector<RSRSharedTexture2DPtr> m_2dTextures;
-		std::vector<RSRSharedTexture2DPtr> m_3dTextures;
+		std::shared_ptr<RSRTextureLibrary> m_2dTextures;
+		std::shared_ptr<RSRTextureLibrary> m_3dTextures;
 
 		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_srvheap3D;
 		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_srvheap2D;
@@ -34,8 +34,9 @@ namespace RSRush
 		virtual bool LateTickSync(const double InGameTime, const double InDeltaTime) override;
 
 		RSRTrenchManager* GetTrenchManager() { return m_trenchManager.get(); }
+		RSRTextureLibrary* GetTextureLibrary3D() { return m_3dTextures.get(); }
+		RSRTextureLibrary* GetTextureLibrary2D() { return m_2dTextures.get(); }
 	public:
-		inline std::shared_ptr<RSRush::RSRTT404Pawn> GetPlayerPawn() const { return m_playerPawn; }
-		inline void SetPlayerPawnToRender(std::shared_ptr<RSRush::RSRTT404Pawn> InPlayerPawn) { m_playerPawn = InPlayerPawn; };
+		inline std::shared_ptr<RSRush::RSRTT404Pawn> GetPlayerPawn() const { return m_playerPawn.lock(); }
 	};
 };

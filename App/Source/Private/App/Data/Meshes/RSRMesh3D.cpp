@@ -33,6 +33,11 @@ RSRush::RSRMesh3D::RSRMesh3D(std::vector<VertexPositionUVColor>&& InVertexes, st
 {
 }
 
+RSRush::RSRMesh3D::RSRMesh3D(const std::filesystem::path& InImagePath)
+: RSRush::RSRMesh(B_APPLY_TRS_MATRIX, VERTEX3D_SIZE)
+{
+}
+
 RSRush::RSRMesh3D::~RSRMesh3D()
 {
 

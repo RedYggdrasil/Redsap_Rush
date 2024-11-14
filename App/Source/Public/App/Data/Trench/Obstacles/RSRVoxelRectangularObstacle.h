@@ -16,7 +16,7 @@ namespace RSRush
 		/*virtual*/ ~RSRVoxelRectangularObstacle()/*override*/;
 	public:
 		using RSRVoxelObstacle::AttemptPlacement;
-		virtual bool AttemptPlacement(std::mt19937_64& InOutGenerator, class RSRVoxalGrid& InOutGrid, const RSRush::RSRTransformMatrix& InTransformMatrix, const RSRVoxelRectangle& InSpawnArea, uint8_t InMaxAttemptCount = 10) R_PURE_OVERRIDE;
+		virtual bool AttemptPlacement(RSRPhysicManager* InPhysicManager, std::mt19937_64& InOutGenerator, class RSRVoxalGrid& InOutGrid, const RSRush::RSRTransformMatrix& InTransformMatrix, const RSRVoxelRectangle& InSpawnArea, uint8_t InMaxAttemptCount = 10) R_PURE_OVERRIDE;
 
 		virtual bool FillVoxalGridData(RSRVoxalGrid& InOutGrid) R_PURE_OVERRIDE; 
 		virtual bool FillVoxalPlanes(std::vector<RSRVoxalPlane>& InOutVoxalPlanes) R_PURE_OVERRIDE;
@@ -24,8 +24,8 @@ namespace RSRush
 
 		virtual bool FillPhysicBodyData(RSRCollidersBody& InOutPhysicBody) R_PURE_OVERRIDE;
 	private:
-		bool AttemptHorizontalBarrierPacement(std::mt19937_64& InOutGenerator, const RSRVoxelRectangle& InSpawnArea, RSRVoxelRectangle& OutResultingObstacle);
-		bool AttemptVerticalSpirePacement(std::mt19937_64& InOutGenerator, const RSRVoxelRectangle& InSpawnArea, RSRVoxelRectangle& OutResultingObstacle);
+		bool AttemptHorizontalBarrierPacement(RSRPhysicManager* InPhysicManager, std::mt19937_64& InOutGenerator, const RSRVoxelRectangle& InSpawnArea, RSRVoxelRectangle& OutResultingObstacle);
+		bool AttemptVerticalSpirePacement(RSRPhysicManager* InPhysicManager, std::mt19937_64& InOutGenerator, const RSRVoxelRectangle& InSpawnArea, RSRVoxelRectangle& OutResultingObstacle);
 
 	};
 };

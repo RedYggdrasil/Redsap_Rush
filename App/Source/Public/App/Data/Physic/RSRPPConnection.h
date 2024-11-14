@@ -9,13 +9,15 @@ namespace RSRush
 
 	class RSRPPConnection : public RSRIPhysicalEntity
 	{
+	protected:
+		RSRPhysicManager* m_physicManager;
 	public:
 		static const RSRPPConnection INVALID_CONNECTION;
 	public :
 		uint16_t NextNodeIndex;
 
 		
-		RSRPPConnection();
+		RSRPPConnection(RSRPhysicManager* InPhysicManager);
 		RSRPPConnection(const RSRPPConnection& InOther) = delete;
 		RSRPPConnection& operator=(const RSRPPConnection& InOther) = delete;
 	public:
@@ -24,7 +26,7 @@ namespace RSRush
 
 	public:
 		//Trenches do not move for now, so neither does their colliders
-		virtual void OnPhysicalPrePass(double InDeltaTime) override { RSRIPhysicalEntity::OnPhysicalPrePass(InDeltaTime); }
+		virtual void OnPhysicalPrePass(RSRPhysicManager* InPhysicManager, double InDeltaTime) override { RSRIPhysicalEntity::OnPhysicalPrePass(InPhysicManager, InDeltaTime); }
 
 	private : 
 		static std::shared_ptr<RSRPPConnection> Create(class RSRPlayerPath& OwningPath, const uint16_t InNextNodeIndex, const DirectX::XMFLOAT3& InStartLocation, const DirectX::XMFLOAT3& InEndLocation);

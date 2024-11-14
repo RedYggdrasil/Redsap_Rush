@@ -1,12 +1,47 @@
 #include "App/Managers/RSRAssetManager.h"
-#include "App/Data/Textures/RSRTexture2D.h"
+
+#ifndef RSRPI_INCLUDED
+#include "App/Game/RSRProgramInstance.h"
+
+#endif
+
 #include <Gen_App/Config/AppConfig.h>
+#include "App/Data/Textures/RSRTexture2D.h"
+#include "App/Geometry/RSRMeshLoader.h"
 #include <string>
 #include <string_view>
 
-RSRush::RSRAssetManager RSRush::RSRAssetManager::Instance = RSRush::RSRAssetManager();
+using namespace RSRush;
 
-bool RSRush::RSRAssetManager::Exist(const std::string_view InKey) const
+RSRAssetManager::RSRAssetManager(RSRProgramInstance* InProgramInstance)
+: mds::IRProgramMemElem(InProgramInstance)
+{
+}
+
+void RSRush::RSRAssetManager::Init()
+{
+	m_pinnedAssets.clear();
+	m_assets.clear();
+}
+
+void RSRush::RSRAssetManager::ShutDown()
+{
+	m_pinnedAssets.clear();
+	m_assets.clear();
+}
+
+
+RSRAssetManager* RSRush::RSRAssetManager::Get(const mds::IRProgramMemElem* InProgramMemElem)
+{
+	return InProgramMemElem->GetRoot<RSRProgramInstance>()->GetAssetManager();
+}
+
+RSRAssetManager* RSRush::RSRAssetManager::Get(RSRProgramInstance* InProgramInstance)
+{
+	return InProgramInstance->GetAssetManager();
+}
+
+bool RSRAssetManager::Exist(const std::string_view InKey) const
 {
 	auto pair = m_assets.find(InKey);
 	if (pair != m_assets.end())
@@ -16,7 +51,7 @@ bool RSRush::RSRAssetManager::Exist(const std::string_view InKey) const
 	return false;
 }
 
-RSRush::RSRSharedAssetPtr RSRush::RSRAssetManager::GetShared(const std::string_view InKey)
+RSRSharedAssetPtr RSRAssetManager::GetShared(const std::string_view InKey)
 {
 	auto pair = m_assets.find(InKey);
 	if (pair != m_assets.end())
@@ -29,7 +64,7 @@ RSRush::RSRSharedAssetPtr RSRush::RSRAssetManager::GetShared(const std::string_v
 	return nullptr;
 }
 
-bool RSRush::RSRAssetManager::AddAsset(const std::string_view InKey, RSRush::RSRSharedAssetPtr InAsset, bool bInPin)
+bool RSRAssetManager::AddAsset(const std::string_view InKey, RSRSharedAssetPtr InAsset, bool bInPin)
 {
 	if (!InAsset)
 	{
@@ -37,7 +72,7 @@ bool RSRush::RSRAssetManager::AddAsset(const std::string_view InKey, RSRush::RSR
 	}
 	if (Exist(InKey))
 	{
-		RSRush::RSRSharedAssetPtr ExistingAsset = GetShared(InKey);
+		RSRSharedAssetPtr ExistingAsset = GetShared(InKey);
 		if (ExistingAsset != InAsset)
 		{
 			return false;
@@ -56,18 +91,42 @@ bool RSRush::RSRAssetManager::AddAsset(const std::string_view InKey, RSRush::RSR
 	return true;
 }
 
-std::shared_ptr<RSRush::RSRTexture2D> RSRush::RSRAssetManager::AddTextureAsset(const std::string_view InTextureAssetPath, bool bInPin)
+std::shared_ptr<RSRTexture2D> RSRAssetManager::AddTextureAsset(const std::string_view InTextureAssetPath, bool bInPin)
 {
+	std::string _;
+	return AddTextureAsset(InTextureAssetPath, bInPin, /*Out*/_);
+}
+
+std::shared_ptr<RSRTexture2D> RSRush::RSRAssetManager::AddTextureAsset(const std::string_view InTextureAssetPath, bool bInPin, std::string& OutResultName)
+{
+	OutResultName = mds::NameAsset(mds::RAssetType::Texture2D, InTextureAssetPath);
 	std::string assetPath = (RSRPaths::AssetsDiskPath() / InTextureAssetPath).string();
-	return AddAsset<RSRush::RSRTexture2D>(
-		mds::NameAsset(mds::RAssetType::Texture2D, assetPath),
+	return AddAsset<RSRTexture2D>(
+		OutResultName,
 		bInPin,
 		assetPath
 	);
-
 }
 
-long RSRush::RSRAssetManager::RemoveAsset(const std::string_view InKey)
+std::shared_ptr<RSRMesh3D> RSRush::RSRAssetManager::AddMesh3DAsset(const std::string_view InMeshAssetPath, bool bInPin, RSRTextureLibrary* InTextureLibrary)
+{
+	std::string _;
+	return AddMesh3DAsset(InMeshAssetPath, bInPin, InTextureLibrary, /*Out*/_);
+}
+
+std::shared_ptr<RSRMesh3D> RSRush::RSRAssetManager::AddMesh3DAsset(const std::string_view InMeshAssetPath, bool bInPin, RSRTextureLibrary* InTextureLibrary, std::string& OutResultName)
+{
+	OutResultName = mds::NameAsset(mds::RAssetType::Mesh, InMeshAssetPath);
+	std::string assetPath = (RSRPaths::AssetsDiskPath() / InMeshAssetPath).string();
+	std::shared_ptr<RSRMesh3D> loadedMesh = RSRMeshLoader::Get(this)->LoadMesh3DFromPath(assetPath, InTextureLibrary);
+	if (AddAsset(OutResultName, loadedMesh, bInPin))
+	{
+		return loadedMesh;
+	}
+	return nullptr;
+}
+
+long RSRAssetManager::RemoveAsset(const std::string_view InKey)
 {
 	if (Exist(InKey))
 	{
@@ -88,7 +147,7 @@ long RSRush::RSRAssetManager::RemoveAsset(const std::string_view InKey)
 	return -1;
 }
 
-bool RSRush::RSRAssetManager::SetPinAsset(const std::string_view InKey, bool bInIsPin)
+bool RSRAssetManager::SetPinAsset(const std::string_view InKey, bool bInIsPin)
 {
 	if (bInIsPin)
 	{
@@ -98,7 +157,7 @@ bool RSRush::RSRAssetManager::SetPinAsset(const std::string_view InKey, bool bIn
 	return true;
 }
 
-bool RSRush::RSRAssetManager::PinAsset(const std::string_view InKey)
+bool RSRAssetManager::PinAsset(const std::string_view InKey)
 {
 	RSRSharedAssetPtr AssetPtr = GetShared(InKey);
 	if (AssetPtr)
@@ -109,14 +168,10 @@ bool RSRush::RSRAssetManager::PinAsset(const std::string_view InKey)
 	return false;
 }
 
-void RSRush::RSRAssetManager::UnpinAsset(const std::string_view InKey)
+void RSRAssetManager::UnpinAsset(const std::string_view InKey)
 {
 	if (IsPinAsset(InKey))
 	{
 		m_pinnedAssets.erase(std::string(InKey));
 	}
-}
-
-RSRush::RSRAssetManager::RSRAssetManager()
-{
 }

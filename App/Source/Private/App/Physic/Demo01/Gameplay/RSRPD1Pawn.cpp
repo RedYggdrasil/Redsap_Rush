@@ -1,7 +1,8 @@
 #include "App/Physic/Demo01/Gameplay/RSRPD1Pawn.h"
-#include <DirectXMath.h>
+#include "App/Managers/RSRPhysicManager.h"
 #include <App/Tools/RSRLog.h>
 #include "MDS/Tools/RMath.h"
+#include <DirectXMath.h>
 
 using namespace RSRush;
 using namespace DirectX;
@@ -9,7 +10,7 @@ using namespace DirectX;
 static const XMVECTOR MOUVEMENT_SPEED = { 10.f, 10.f, 10.f, 0.f };
 
 RSRPD1Pawn::RSRPD1Pawn()
-	: Pawn(mds::RAssetAuthority::None, false), RSRIPhysicalEntity(), m_prePhysicNewTransform(RSRush::RSRTransformMatrix(mds::TRS_IDENTITY))
+	: Pawn(mds::RAssetAuthority::None), RSRIPhysicalEntity(), m_prePhysicNewTransform(RSRush::RSRTransformMatrix(mds::TRS_IDENTITY))
 {
 	m_mainTransform.SetPositon(XMFLOAT3{ 0.f, 0.f,1.8f });
 	m_prePhysicNewTransform = m_mainTransform;
@@ -64,6 +65,35 @@ void RSRush::RSRPD1Pawn::OnPositionUpdated()
 	m_prePhysicNewTransform = m_mainTransform;
 }
 
+void RSRush::RSRPD1Pawn::OnAddedToScene(std::weak_ptr<RSRSObject> InThisWPtr, std::weak_ptr<RSROScene> InScene)
+{
+	Pawn::OnAddedToScene(InThisWPtr, InScene);
+	//At this point RSRPD1Pawn is registered memTree element
+
+	if (!InThisWPtr.expired())
+	{
+		std::shared_ptr<RSRPD1Pawn> _thisPtr = std::dynamic_pointer_cast<RSRPD1Pawn>(InThisWPtr.lock());
+		if (_thisPtr)
+		{
+			this->SetSelfReference(_thisPtr);
+			RSRush::RSRPhysicManager::Get(this)->AddPhysicalEntity(this->GeneratePhysicBody());
+		}
+	}
+}
+
+void RSRush::RSRPD1Pawn::OnRemovedFromScene(std::weak_ptr<RSRSObject> InThisWPtr, std::weak_ptr<RSROScene> InScene)
+{
+	if (!InThisWPtr.expired())
+	{
+		std::shared_ptr<RSRPD1Pawn> _thisPtr = std::dynamic_pointer_cast<RSRPD1Pawn>(InThisWPtr.lock());
+		if (_thisPtr)
+		{
+			RSRush::RSRPhysicManager::Get(this)->RemovePhysicalEntity(this->GetEditKey());
+		}
+	}
+	Pawn::OnRemovedFromScene(InThisWPtr, InScene);
+}
+
 bool RSRush::RSRPD1Pawn::LateTickSync(const double InGameTime, const double InDeltaTime)
 {
 	Pawn::LateTickSync(InGameTime, InDeltaTime);
@@ -73,7 +103,7 @@ bool RSRush::RSRPD1Pawn::LateTickSync(const double InGameTime, const double InDe
 		m_mainTransform = this->GetLastResolvedPhysicBody().Transform;
 		OnPositionUpdated();
 	}
-
+	
 	return true;
 }
 
@@ -108,9 +138,9 @@ RSRPhysicBody RSRush::RSRPD1Pawn::GeneratePhysicBody() const
 	return result;
 }
 
-void RSRush::RSRPD1Pawn::OnPhysicalPrePass(double InDeltaTime)
+void RSRush::RSRPD1Pawn::OnPhysicalPrePass(RSRPhysicManager* InPhysicManager, double InDeltaTime)
 {
-	RSRIPhysicalEntity::OnPhysicalPrePass(InDeltaTime);
+	RSRIPhysicalEntity::OnPhysicalPrePass(InPhysicManager, InDeltaTime);
 }
 
 void RSRush::RSRPD1Pawn::OnOverlapWith(RSRIPhysicalEntity* InOther)

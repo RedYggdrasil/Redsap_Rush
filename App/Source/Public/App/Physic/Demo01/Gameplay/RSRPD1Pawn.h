@@ -43,13 +43,16 @@ namespace RSRush
 
 		void OnPositionUpdated();
 
+		virtual void OnAddedToScene(std::weak_ptr<RSRSObject> InThisWPtr, std::weak_ptr<RSROScene> InScene);
+		virtual void OnRemovedFromScene(std::weak_ptr<RSRSObject> InThisWPtr, std::weak_ptr<RSROScene> InScene);
 		virtual bool LateTickSync(const double InGameTime, const double InDeltaTime) override;
+	
 	public:
 
 		RSRPhysicBody GeneratePhysicBody() const;
 	public:
 		//Implemented via RSRIPhysicalEntity
-		virtual void OnPhysicalPrePass(double InDeltaTime) override;
+		virtual void OnPhysicalPrePass(RSRPhysicManager* InPhysicManager, double InDeltaTime) override;
 		virtual void OnOverlapWith(RSRIPhysicalEntity* InOther) override;
 	};
 }

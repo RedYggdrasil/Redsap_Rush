@@ -21,6 +21,11 @@ namespace RSRush
 		static std::filesystem::path m_shadersDiskPath;
 		static std::string m_shadersDiskPath_str;
 		static std::string_view m_shadersDiskPath_view;
+
+		static std::filesystem::path m_assetFolderAndSeparator;
+		static std::string m_assetFolderAndSeparator_str;
+		static std::string_view m_assetFolderAndSeparator_view;
+
 	public:
 		inline static const std::filesystem::path& RunnablePath() { return m_runnablePath; }
 		inline static const std::string& RunnablePathSTR() { return m_runnablePath_str; }
@@ -31,6 +36,10 @@ namespace RSRush
 		inline static const std::filesystem::path& ShadersDiskPath() { return m_shadersDiskPath; }
 		inline static const std::string& ShadersDiskPathSTR() { return m_shadersDiskPath_str; }
 		inline static std::string_view ShadersDiskPathView() { return m_shadersDiskPath_view; }
+
+		inline static const std::filesystem::path& AssetFolderAndSeparator() { return m_assetFolderAndSeparator; }
+		inline static const std::string& AassetFolderAndSeparatorSTR() { return m_assetFolderAndSeparator_str; }
+		inline static std::string_view AssetFolderAndSeparatorVIEW() { return m_assetFolderAndSeparator_view; }
 	private:
 		friend class RSRProgramInstance;
 	};

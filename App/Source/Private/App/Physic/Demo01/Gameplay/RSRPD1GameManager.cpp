@@ -3,16 +3,16 @@
 
 using namespace RSRush;
 
-void RSRush::RSRPD1GameManager::InitializeGame(std::weak_ptr<RSRScene> InScene)
+void RSRush::RSRPD1GameManager::InitializeGame(std::weak_ptr<RSRScene> InScene, std::weak_ptr<GameManager> InSelfWPtr)
 {
-	GameManager::InitializeGame(InScene);
+	GameManager::InitializeGame(InScene, InSelfWPtr);
 	m_playerControllers.clear();
 	AddPlayerController();
 #if _DEBUG
-	std::shared_ptr<RSRPD1Scene> pD1Scene = std::dynamic_pointer_cast<RSRPD1Scene>(m_owningScene.lock());
+	std::shared_ptr<RSRPD1Scene> pD1Scene = std::dynamic_pointer_cast<RSRPD1Scene>(InScene.lock());
 	assert((bool)pD1Scene && "Owning scene is not a RSRPD1Scene !");
 #else
-	std::shared_ptr<RSRPD1Scene> pD1Scene = std::static_pointer_cast<RSRPD1Scene>(m_owningScene.lock());
+	std::shared_ptr<RSRPD1Scene> pD1Scene = std::static_pointer_cast<RSRPD1Scene>(InScene.lock());
 #endif
 	GetPD1PlayerController()->Initialize();
 }

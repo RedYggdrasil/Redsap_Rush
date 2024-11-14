@@ -6,12 +6,12 @@
 using namespace RSRush;
 using namespace DirectX;
 
-RSRODrawableLightSource::RSRODrawableLightSource(const RSRTransform& InTransform, const bool bInHandleAsSObject, const uint16_t InTextureID)
-	:RSRSObject(mds::RAssetAuthority::Absolute, bInHandleAsSObject)
+RSRODrawableLightSource::RSRODrawableLightSource(RSRBasicShapes* BasicShapes, const RSRTransform& InTransform, const uint16_t InTextureID)
+	:RSRSObject(mds::RAssetAuthority::Absolute, false)
 {
 	m_mainTransform.SetTransform(InTransform);
 	
-	m_mainMesh = RSRBasicShapes::Get().GetRegisterNewSphere(TEXT("SunSphere"), XMFLOAT3(1.f, 1.f, 1.f), InTextureID);
+	m_mainMesh = BasicShapes->GetRegisterNewSphere(TEXT("SunSphere"), XMFLOAT3(1.f, 1.f, 1.f), InTextureID);
 	auto& vertices = m_mainMesh->GetVertices();
 	XMVECTOR3 lNormal;
 	for (auto& vertice : vertices)

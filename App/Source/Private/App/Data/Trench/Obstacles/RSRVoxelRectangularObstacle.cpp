@@ -25,7 +25,7 @@ RSRush::RSRVoxelRectangularObstacle::~RSRVoxelRectangularObstacle()
 constexpr bool LOG_ATTEMPT_FAILURE = false;
 #define LOGIF(Expr) if(LOG_ATTEMPT_FAILURE) {Expr;}
 #define RETURN_FALSE_LOGIF(Expr) if(LOG_ATTEMPT_FAILURE) {Expr;} return false;
-bool RSRVoxelRectangularObstacle::AttemptPlacement(std::mt19937_64& InOutGenerator, RSRVoxalGrid& InOutGrid, const RSRush::RSRTransformMatrix& InTransformMatrix, const RSRVoxelRectangle& InSpawnArea, uint8_t InMaxAttemptCount)
+bool RSRVoxelRectangularObstacle::AttemptPlacement(RSRPhysicManager* InPhysicManager, std::mt19937_64& InOutGenerator, RSRVoxalGrid& InOutGrid, const RSRush::RSRTransformMatrix& InTransformMatrix, const RSRVoxelRectangle& InSpawnArea, uint8_t InMaxAttemptCount)
 {
 	RSRCollidersBodyLWPair physicBodyPair(TEST_HAZARD_PLACEMENT);
 
@@ -45,10 +45,10 @@ bool RSRVoxelRectangularObstacle::AttemptPlacement(std::mt19937_64& InOutGenerat
 		switch (distType(InOutGenerator))
 		{
 		case 0 :
-			bSucessfullyPlaced = AttemptHorizontalBarrierPacement(InOutGenerator, InSpawnArea, /*Out*/ VoxelPlacement);
+			bSucessfullyPlaced = AttemptHorizontalBarrierPacement(InPhysicManager, InOutGenerator, InSpawnArea, /*Out*/ VoxelPlacement);
 			break;
 		case 1 :
-			bSucessfullyPlaced = AttemptVerticalSpirePacement(InOutGenerator, InSpawnArea, /*Out*/ VoxelPlacement);
+			bSucessfullyPlaced = AttemptVerticalSpirePacement(InPhysicManager, InOutGenerator, InSpawnArea, /*Out*/ VoxelPlacement);
 			break;
 		default:
 			RSRLog::Log(LOG_ERROR, TEXT("Out of bounds result for RectangularObstacle in 'RSRVoxelRectangularObstacle::AttemptPlacement' !"));
@@ -128,7 +128,7 @@ static constexpr int32_t RO_MAX_DEPTH_VXL = 10;
 static constexpr int32_t RO_MIN_WIDTH_VXL = 1;
 static constexpr int32_t RO_MAX_WIDTH_VXL = 10;
 
-bool RSRVoxelRectangularObstacle::AttemptHorizontalBarrierPacement(std::mt19937_64& InOutGenerator, const RSRVoxelRectangle& InSpawnArea, RSRVoxelRectangle& OutResultingObstacle)
+bool RSRVoxelRectangularObstacle::AttemptHorizontalBarrierPacement(RSRPhysicManager* InPhysicManager, std::mt19937_64& InOutGenerator, const RSRVoxelRectangle& InSpawnArea, RSRVoxelRectangle& OutResultingObstacle)
 {
 
 	if (InSpawnArea.Max.x - RO_MIN_DEPTH_VXL < InSpawnArea.Min.x)
@@ -175,7 +175,7 @@ bool RSRVoxelRectangularObstacle::AttemptHorizontalBarrierPacement(std::mt19937_
 	{
 		RETURN_FALSE_LOGIF(RSRLog::Log(LOG_DISPLAY, TEXT("Genereted space is voxel occupied")));
 	};
-	if (!AvalableVoxelSpace(OutResultingObstacle))
+	if (!AvalableVoxelSpace(InPhysicManager, OutResultingObstacle))
 	{
 		RETURN_FALSE_LOGIF(RSRLog::Log(LOG_DISPLAY, TEXT("Physically obstructed space")));
 	}
@@ -184,7 +184,7 @@ bool RSRVoxelRectangularObstacle::AttemptHorizontalBarrierPacement(std::mt19937_
 	return true;
 }
 
-bool RSRush::RSRVoxelRectangularObstacle::AttemptVerticalSpirePacement(std::mt19937_64& InOutGenerator, const RSRVoxelRectangle& InSpawnArea, RSRVoxelRectangle& OutResultingObstacle)
+bool RSRush::RSRVoxelRectangularObstacle::AttemptVerticalSpirePacement(RSRPhysicManager* InPhysicManager, std::mt19937_64& InOutGenerator, const RSRVoxelRectangle& InSpawnArea, RSRVoxelRectangle& OutResultingObstacle)
 {
 	if (InSpawnArea.Max.x - RO_MIN_DEPTH_VXL < InSpawnArea.Min.x)
 	{
@@ -237,7 +237,7 @@ bool RSRush::RSRVoxelRectangularObstacle::AttemptVerticalSpirePacement(std::mt19
 	{
 		RETURN_FALSE_LOGIF(RSRLog::Log(LOG_DISPLAY, TEXT("Genereted space is voxel occupied")));
 	};
-	if (!AvalableVoxelSpace(OutResultingObstacle))
+	if (!AvalableVoxelSpace(InPhysicManager, OutResultingObstacle))
 	{
 		RETURN_FALSE_LOGIF(RSRLog::Log(LOG_DISPLAY, TEXT("Physically obstructed space")));
 	}

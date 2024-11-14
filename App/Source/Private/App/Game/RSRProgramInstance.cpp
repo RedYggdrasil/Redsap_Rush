@@ -1,36 +1,35 @@
 #include "App/Game/RSRProgramInstance.h"
 
-#include "App/Game/RSRPaths.h"
+///MDS Library
 #include "MDS/Threads/RTaskManager.h"
+#include "MDS/Tools/System/RTimekeeper.h"
 
+
+///App
+#include "App/D3D/DXContext.h"
 #include "App/Data/Trench/RSRVoxalGrid.h"
 #include "App/Data/Trench/RSRVoxalPlane.h"
-
+#include "App/Game/RSRPaths.h"
 #include "App/Gameplay/GameManager.h"
-
-#include "App/System/RSRRandomizer.h"
-
+#include "App/Gameplay/RSRScene.h"
+#include "App/Geometry/RSRBasicShapes.h"
+#include "App/Geometry/RSRMeshLoader.h"
+#include "App/Managers/RSRAssetManager.h"
+#include "App/Managers/RSRPhysicManager.h"
 #include "App/Physic/Demo01/RSRPD1Scene.h"
+#include "App/Render/RSRPipelines.h"
+#include "App/System/RSRRandomizer.h"
 #include "App/TheTrench/RSRTTScene.h"
 #include "App/Tools/DebugLayer.h"
 #include "App/Tools/ImageLoader.h"
-
-
-#include "App/Render/RSRPipelines.h"
-#include "App/Libs/WinInclude.h"
-#include "App/D3D/DXContext.h"
+#include "App/Tools/Inputs/RSRGameInput.h"
 #include "App/Tools/Shader.h"
 #include "App/Tools/Window.h"
-#include "App/Managers/RSRAssetManager.h"
-#include "App/Managers/RSRPhysicManager.h"
-#include "App/Geometry/RSRBasicShapes.h"
-#include "App/Tools/Inputs/RSRGameInput.h"
-#include "App/Gameplay/RSRScene.h"
-#include <MDS/Tools/System/RTimekeeper.h>
+
 #include <Tracy.hpp>
 
-using Microsoft::WRL::ComPtr;
 
+using Microsoft::WRL::ComPtr;
 using namespace RSRush;
 
 
@@ -50,7 +49,7 @@ void RSRProgramInstance::RendererData::ResetDatas()
 	lockLastRendered.unlock();
 }
 
-void RSRush::RSRProgramInstance::RendererData::RenderFrame(const FrameData& InFrameData)
+void RSRProgramInstance::RendererData::RenderFrame(const FrameData& InFrameData)
 {
 	std::unique_lock<std::mutex>lock(m_framesToRenderLock);
 	FramesToRender.push(InFrameData);
@@ -58,7 +57,7 @@ void RSRush::RSRProgramInstance::RendererData::RenderFrame(const FrameData& InFr
 	m_cvHasframesToRender.notify_one();
 }
 
-void RSRush::RSRProgramInstance::RendererData::WaitForFrame(const size_t InFrameIndex)
+void RSRProgramInstance::RendererData::WaitForFrame(const size_t InFrameIndex)
 {
 	if (LastRenderedFrameIndex >= InFrameIndex) { return; }
 	std::unique_lock<std::mutex> lastRenderedframeLock(m_LastRenderedframeLock);
@@ -67,7 +66,7 @@ void RSRush::RSRProgramInstance::RendererData::WaitForFrame(const size_t InFrame
 	return;
 }
 
-void RSRush::RSRProgramInstance::RendererData::StopRenderer(const size_t InLastFrameIndex)
+void RSRProgramInstance::RendererData::StopRenderer(const size_t InLastFrameIndex)
 {
 	WaitForFrame(InLastFrameIndex);
 	std::unique_lock<std::mutex> lock(m_framesToRenderLock);
@@ -76,13 +75,16 @@ void RSRush::RSRProgramInstance::RendererData::StopRenderer(const size_t InLastF
 	m_cvHasframesToRender.notify_one();
 }
 
-RSRush::RSRProgramInstance::RSRProgramInstance()
-: mds::Singleton<RSRProgramInstance>(), m_piStatistics(), m_bIsInitialized(false)
+RSRProgramInstance::RSRProgramInstance()
+: IRProgramRoot(), m_piStatistics(), m_bIsInitialized(false),
+m_assetManager(this), m_basicShapes(this),
+m_dxContext(this), m_dxWindow(), m_gameInput(),
+m_meshLoader(this), m_physicManager()
 {
 
 }
 
-RSRush::RSRProgramInstance::~RSRProgramInstance()
+RSRProgramInstance::~RSRProgramInstance()
 {
 	if (m_bIsInitialized)
 	{
@@ -166,24 +168,24 @@ void RSRProgramInstance::Run(int argc, char** argv)
 	double RenderingFrameFromStartSecond = 0.f;
 	size_t RenderingFrameIndex = 0;// std::min(FIRST_FRAME_INDEX - 1, FIRST_FRAME_INDEX);
 
-	while (!DXWindow::Get().ShouldClose())
+	while (!m_dxWindow.ShouldClose())
 	{
 		//Pre Frame Setups
 		{
 			ZoneScopedN("Pre Frame Setups");
 			//Process windows messages
-			DXWindow::Get().Update();
+			m_dxWindow.Update();
 			//Handle resizing
-			if (DXWindow::Get().ShouldResize())
+			if (m_dxWindow.ShouldResize())
 			{
 				if (RenderingFrameIndex >= FIRST_FRAME_INDEX)
 				{
 					m_rendererData.WaitForFrame(RenderingFrameIndex);
 				}
 				//Clean current Command Queue for buffers
-				DXContext::Get().FlushRender(DXWindow::GetFrameCount());
+				m_dxContext.FlushRender(DXWindow::GetFrameCount());
 				//Resize
-				DXWindow::Get().Resize();
+				m_dxWindow.Resize();
 			}
 		}
 
@@ -220,9 +222,9 @@ void RSRProgramInstance::Run(int argc, char** argv)
 			mds::RTaskManager::Get().CallMainThreadCallbacks();
 
 			//Handle GameInputs
-			RSRGameInput::Get().Update(ComputeFrameDeltaTimeSecond);
+			m_gameInput.Update(ComputeFrameDeltaTimeSecond);
 			m_currentScene->PrePassTick(ComputeFrameFromStartSecond, ComputeFrameDeltaTimeSecond);
-			RSRPhysicManager::Get().UpdatePhysic(ComputeFrameFromStartSecond, ComputeFrameDeltaTimeSecond);
+			m_physicManager.UpdatePhysic(ComputeFrameFromStartSecond, ComputeFrameDeltaTimeSecond);
 		}
 
 		//Start rendering after an a first update has been done
@@ -236,16 +238,16 @@ void RSRProgramInstance::Run(int argc, char** argv)
 		//Sync Compute and Rendering
 		{
 			ZoneScopedN("Sync Compute and Rendering");
-			RSRPhysicManager::Get().LateTickSync(ComputeFrameFromStartSecond, ComputeFrameDeltaTimeSecond);
+			m_physicManager.LateTickSync(ComputeFrameFromStartSecond, ComputeFrameDeltaTimeSecond);
 			//Update Program State in sync before next render
 			m_currentScene->LateTickSync(ComputeFrameFromStartSecond, ComputeFrameDeltaTimeSecond);
 		}
 		//Upload new sync buffer data to GPU
 		{
 			ZoneScopedN("Upload new sync buffer data to GPU");
-			ID3D12GraphicsCommandList7* frameUploadList = DXContext::Get().InitFrameUploadList();
+			ID3D12GraphicsCommandList7* frameUploadList = m_dxContext.InitFrameUploadList();
 			m_currentScene->UpdateMeshInstanceBuffers(ComputeFrameFromStartSecond, ComputeFrameDeltaTimeSecond, frameUploadList);
-			DXContext::Get().ExecuteFrameUploadCommandList();
+			m_dxContext.ExecuteFrameUploadCommandList();
 			m_currentScene->ClearUnusedMeshInstanceBuffers();
 		}
 		FrameMark;
@@ -265,14 +267,11 @@ void RSRProgramInstance::InitializeProgram()
 	mds::RTaskManager::Get().Init(12);
 
 //	
-	if (!DXContext::Get().Init())
+	if (!m_dxContext.Init())
 	{
 		//std::cout << " Bad " << std::endl;
 		return;
 	}
-
-
-	RSRAssetManager* pAssetManager = &RSRAssetManager::Get();
 
 	m_pipelines = std::make_unique<RSRPipelines>(this);
 
@@ -282,13 +281,15 @@ void RSRProgramInstance::InitializeProgram()
 		return;
 	}
 
-	_R_FALSE(DXWindow::Get().Init());
-	DXWindow::Get().SetUsingVerticalSync(!GetPIStatistics().bTearingSupported || USE_VSYNC_DEFAULT_VALUE);
-	_R_FALSE(RSRBasicShapes::Get().Init(pAssetManager));
-	_R_FALSE(RSRPhysicManager::Get().Init(&RSRBasicShapes::Get()));
-	_R_FALSE(RSRGameInput::Get().Init());
+	m_assetManager.Init();
+	m_meshLoader.Init();
 
+	_R_FALSE(m_dxWindow.Init(this));
+	m_dxWindow.SetUsingVerticalSync(!GetPIStatistics().bTearingSupported || USE_VSYNC_DEFAULT_VALUE);
+	_R_FALSE(m_basicShapes.Init(&m_assetManager));
+	_R_FALSE(m_physicManager.Init(this, &m_basicShapes));
 
+	_R_FALSE(m_gameInput.Init(this));
 
 	m_bIsInitialized = true;
 }
@@ -305,13 +306,17 @@ void RSRProgramInstance::ShutdownProgram()
 	}
 	m_scenes.clear();
 
-	RSRGameInput::Get().Shutdown();
-	RSRPhysicManager::Get().Shutdown();
-	RSRBasicShapes::Get().Shutdown();
-	DXWindow::Get().Shutdown();
+	m_gameInput.Shutdown();
+	m_physicManager.Shutdown();
+	m_basicShapes.Shutdown();
+	m_dxWindow.Shutdown();
+
+	m_meshLoader.ShutDown();
+	m_assetManager.ShutDown();
 
 	m_pipelines.reset();
-	DXContext::Get().Shutdown();
+
+	m_dxContext.Shutdown();
 
 	m_randomizer.reset();
 
@@ -330,17 +335,17 @@ void RSRProgramInstance::SetCurrentScene(std::shared_ptr<RSRScene> InNewCurrentS
 	ResetCurrentScene();
 	if (!InNewCurrentScene) { return; }
 	m_currentScene = InNewCurrentScene;
-	RSRPhysicManager::Get().SetPhysicContext(m_currentScene->GetPhysicContext());
-	RSRGameInput::Get().SetUserProvider(m_currentScene->GetGameManager().get());
+	m_physicManager.SetPhysicContext(m_currentScene->GetPhysicContext());
+	m_gameInput.SetUserProvider(m_currentScene->GetGameManager().get());
 }
 
 void RSRProgramInstance::ResetCurrentScene()
 {
 	if (m_currentScene)
 	{
-		DXContext::Get().FlushRender(DXWindow::GetFrameCount());
+		m_dxContext.FlushRender(DXWindow::GetFrameCount());
 	}
-	RSRGameInput::Get().SetUserProvider(nullptr);
+	m_gameInput.SetUserProvider(nullptr);
 	m_currentScene.reset();
 }
 
@@ -392,6 +397,15 @@ bool RSRProgramInstance::InitializePaths() const
 	RSRPaths::m_shadersDiskPath_str = RSRPaths::m_shadersDiskPath.string();
 	RSRPaths::m_shadersDiskPath_view = RSRPaths::m_shadersDiskPath_str;
 
+	char separator = std::filesystem::path::preferred_separator; 
+	std::string separatorString(1, separator);
+
+	std::string assetFolderAndSeparatorConstruction = separatorString;
+	assetFolderAndSeparatorConstruction.append(App_LOCAL_ASSET_PATH).append(separatorString);
+	RSRPaths::m_assetFolderAndSeparator = assetFolderAndSeparatorConstruction;
+	RSRPaths::m_assetFolderAndSeparator_str = RSRPaths::m_assetFolderAndSeparator.string();
+	RSRPaths::m_shadersDiskPath_view = RSRPaths::m_assetFolderAndSeparator_str;
+
 	RSRLog::Log(LOG_DISPLAY, TEXT("filepaths : '{}'"), RSRPaths::m_runnablePath_str);
 	//RSRPaths::
 	return true;
@@ -406,43 +420,43 @@ bool RSRProgramInstance::UNIT_TEST()
 	return bAllSucessfull;
 }
 
-Microsoft::WRL::ComPtr<ID3D12RootSignature> RSRush::RSRProgramInstance::GetRootSig2D() const
+Microsoft::WRL::ComPtr<ID3D12RootSignature> RSRProgramInstance::GetRootSig2D() const
 {
 	return m_pipelines->GetRSRPSO2D().GetRootSig();
 }
 
-Microsoft::WRL::ComPtr<ID3D12PipelineState> RSRush::RSRProgramInstance::GetPSO2D() const
+Microsoft::WRL::ComPtr<ID3D12PipelineState> RSRProgramInstance::GetPSO2D() const
 {
 	return m_pipelines->GetRSRPSO2D().GetPSO();
 }
 
-Microsoft::WRL::ComPtr<ID3D12RootSignature> RSRush::RSRProgramInstance::GetRootSig3D() const
+Microsoft::WRL::ComPtr<ID3D12RootSignature> RSRProgramInstance::GetRootSig3D() const
 {
 	return m_pipelines->GetRSRPSO3D().GetRootSig();
 }
 
-Microsoft::WRL::ComPtr<ID3D12PipelineState> RSRush::RSRProgramInstance::GetPSO3D() const
+Microsoft::WRL::ComPtr<ID3D12PipelineState> RSRProgramInstance::GetPSO3D() const
 {
 	return m_pipelines->GetRSRPSO3D().GetPSO();
 }
 
-Microsoft::WRL::ComPtr<ID3D12RootSignature> RSRush::RSRProgramInstance::GetRootSig3DInstanced() const
+Microsoft::WRL::ComPtr<ID3D12RootSignature> RSRProgramInstance::GetRootSig3DInstanced() const
 {
 	return m_pipelines->GetRSRPSO3DInstanced().GetRootSig();
 }
 
-Microsoft::WRL::ComPtr<ID3D12PipelineState> RSRush::RSRProgramInstance::GetPSO3DInstanced() const
+Microsoft::WRL::ComPtr<ID3D12PipelineState> RSRProgramInstance::GetPSO3DInstanced() const
 {
 	return m_pipelines->GetRSRPSO3DInstanced().GetPSO();
 }
 
 #if DEBUG_PHYSIC
-Microsoft::WRL::ComPtr<ID3D12RootSignature> RSRush::RSRProgramInstance::GetRootSigDebugPhysic() const
+Microsoft::WRL::ComPtr<ID3D12RootSignature> RSRProgramInstance::GetRootSigDebugPhysic() const
 {
 	return m_pipelines->GetRSRPSO3DDebugPhysic().GetRootSig();
 }
 
-Microsoft::WRL::ComPtr<ID3D12PipelineState> RSRush::RSRProgramInstance::GetPSODebugPhysic() const
+Microsoft::WRL::ComPtr<ID3D12PipelineState> RSRProgramInstance::GetPSODebugPhysic() const
 {
 	return m_pipelines->GetRSRPSO3DDebugPhysic().GetPSO();
 }
