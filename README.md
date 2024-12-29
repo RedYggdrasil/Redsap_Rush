@@ -107,5 +107,5 @@ To enable physic debugging, set _DEBUG_PHYSIC_ to 1 (was 0) :
 To enable or disable a physic type, set to 1, or 0 to disable said type. For exemple this will draw the collision primitives of _WORLD_DYNAMIC_ objects in the scene : 
 
 ```
-#define DEBUG_PHYSIC_WORLD_DYNAMIC 		1
+#define DEBUG_PHYSIC_WORLD_DYNAMIC 1
 ```
