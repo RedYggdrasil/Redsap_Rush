@@ -141,6 +141,7 @@ bool RSRush::RSRPlayerPath::ClearPlayerPath()
 		this->OnNodeToBeRemoved(m_pathPoints.front());
 		m_pathPoints.pop_front();
 	}
+	return true;
 }
 
 void RSRush::RSRPlayerPath::OnNodeToBeRemoved(RSRPPNode& InToBeRemoved)
