@@ -129,6 +129,20 @@ void RSRush::RSRPlayerPath::TrimForProgression(const double InProgression)
 	}
 }
 
+bool RSRush::RSRPlayerPath::ClearPlayerPath()
+{
+	if (!m_physicManager)
+	{
+		return false;
+	}
+
+	while (m_pathPoints.size() > 0)
+	{
+		this->OnNodeToBeRemoved(m_pathPoints.front());
+		m_pathPoints.pop_front();
+	}
+}
+
 void RSRush::RSRPlayerPath::OnNodeToBeRemoved(RSRPPNode& InToBeRemoved)
 {
 	if (InToBeRemoved.IsValid())

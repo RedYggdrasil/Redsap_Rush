@@ -112,7 +112,8 @@ namespace RSRush
 		
 		uint32_t textureIndex;
 	};
-
+	std::array<DirectX::XMFLOAT3, 2> ComputeExtremums(const VertexPositionUVColor* InData, const size_t InCount);
+	std::array<DirectX::XMFLOAT3, 2> ComputeCenterExtends(const VertexPositionUVColor* InData, const size_t InCount);
 
 	struct UICBV
 	{

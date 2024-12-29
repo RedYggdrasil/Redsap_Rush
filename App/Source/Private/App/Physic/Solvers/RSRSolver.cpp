@@ -30,7 +30,7 @@ RSRSolver* RSRGenericSolverFactory::CreateGenericSolver(const RSRSolverType InES
 
 std::vector<RSRPhysicBody>& RSRush::RSRSolver::GetPhysicManagerPhysicBodies(RSRPhysicManager& InPhysicManager) const
 {
-	return InPhysicManager.m_physicalBodies;
+	return InPhysicManager.m_physicBodies.Values.GetUnderlyingVector();
 }
 
 RSRush::RSRSolver::RSRSolver(const RSRSolverType InESolverType)

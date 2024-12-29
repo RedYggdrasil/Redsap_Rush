@@ -25,11 +25,11 @@ namespace RSRush
 			}
 			XMVECTOR3 lGobalGravity = XMLoadFloat3(&pm.m_physicContext.GlobalGravity);
 
-			size_t count = pm.m_physicalBodies.size();
+			size_t count = pm.m_physicBodies.Values.size();
 
 			for (size_t i = 0; i < count; ++i)
 			{
-				RSRPhysicBody& physicalBody = pm.m_physicalBodies[i];
+				RSRPhysicBody& physicalBody = pm.m_physicBodies.Values[i];
 				if (physicalBody.Dynamics.bIsDynamic)
 				{
 					RSRDynamics& dynamics = physicalBody.Dynamics;
@@ -58,11 +58,11 @@ namespace RSRush
 			}
 			XMVECTOR3 lGobalGravity = XMLoadFloat3(&pm.m_physicContext.GlobalGravity);
 
-			size_t count = pm.m_physicalBodies.size();
+			size_t count = pm.m_physicBodies.Values.size();
 
 			for (size_t i = 0; i < count; ++i)
 			{
-				RSRPhysicBody& physicalBody = pm.m_physicalBodies[i];
+				RSRPhysicBody& physicalBody = pm.m_physicBodies.Values[i];
 				if (physicalBody.Dynamics.bIsDynamic)
 				{
 					RSRDynamics& dynamics = physicalBody.Dynamics;
@@ -88,11 +88,11 @@ namespace RSRush
 				return;
 			}
 
-			size_t count = pm.m_physicalBodies.size();
+			size_t count = pm.m_physicBodies.Values.size();
 
 			for (size_t i = 0; i < count; ++i)
 			{
-				RSRPhysicBody& physicalBody = pm.m_physicalBodies[i];
+				RSRPhysicBody& physicalBody = pm.m_physicBodies.Values[i];
 				if (physicalBody.Dynamics.bIsDynamic)
 				{
 					RSRDynamics& dynamics = physicalBody.Dynamics;

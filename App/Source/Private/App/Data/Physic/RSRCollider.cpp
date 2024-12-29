@@ -3,6 +3,7 @@
 #include "MDS/Tools/RMath.h"
 
 #include "App/Data/RSRTransform.h"
+#include "App/Game/RSRProgramInstance.h"
 #include "App/Managers/RSRPhysicManager.h"
 #include "App/Tools/RSRLog.h"
 
@@ -142,22 +143,29 @@ void RSRCollider::ExtendBoundBox(DirectX::BoundingBox* InOutBoundingBox) const
 }
 
 #if DEBUG_PHYSIC
-bool RSRCollider::DebugDraw(ID3D12GraphicsCommandList7* InUploadCommandList) const
+bool RSRCollider::DebugDraw(mds::IRProgramMemElem* InContext, ID3D12GraphicsCommandList7* InUploadCommandList) const
+{
+	RSRPhysicManager* physicManager = InContext->GetRoot<RSRProgramInstance>()->GetPhysicManager();
+	return this->DebugDraw(physicManager, InUploadCommandList);
+}
+
+bool RSRush::RSRCollider::DebugDraw(RSRPhysicManager* InPhysicManager, ID3D12GraphicsCommandList7* InUploadCommandList) const
 {
 	switch (this->Type)
 	{
 	case RSRColliderType::RectCollider:
-		return RSRCollider::DebugDrawOrientedBox(this->RectData, InUploadCommandList);
+		return RSRCollider::DebugDrawOrientedBox(InPhysicManager, this->RectData, InUploadCommandList);
 	case RSRColliderType::SphereCollider:
-		return RSRCollider::DebugDrawSphere(this->SphereData, InUploadCommandList);
+		return RSRCollider::DebugDrawSphere(InPhysicManager, this->SphereData, InUploadCommandList);
 	default:
 		RSRLog::LogError(TEXT("Unimplement case in 'RSRCollider::DebugDraw'"));
 		return false;
 	}
 }
-bool RSRCollider::DebugDrawOrientedBox(const DirectX::BoundingOrientedBox& InOrientedBox, ID3D12GraphicsCommandList7* InUploadCommandList)
+
+bool RSRCollider::DebugDrawOrientedBox(RSRPhysicManager* InPhysicManager, const DirectX::BoundingOrientedBox& InOrientedBox, ID3D12GraphicsCommandList7* InUploadCommandList)
 {
-	const RSRush::RSRSharedMesh3DPtr& squareMesh = RSRPhysicManager::Get().GetDebugSquare();
+	const RSRush::RSRSharedMesh3DPtr& squareMesh = InPhysicManager->GetDebugSquare();
 	//InOrientedBox.Center
 	
 	if (squareMesh)
@@ -185,9 +193,9 @@ bool RSRCollider::DebugDrawOrientedBox(const DirectX::BoundingOrientedBox& InOri
 	}
 	return false;
 }
-bool RSRCollider::DebugDrawSphere(const DirectX::BoundingSphere& InSphere, ID3D12GraphicsCommandList7* InUploadCommandList)
+bool RSRCollider::DebugDrawSphere(RSRPhysicManager* InPhysicManager, const DirectX::BoundingSphere& InSphere, ID3D12GraphicsCommandList7* InUploadCommandList)
 {
-	const RSRush::RSRSharedMesh3DPtr& sphereMesh = RSRPhysicManager::Get().GetDebugSphere();
+	const RSRush::RSRSharedMesh3DPtr& sphereMesh = InPhysicManager->GetDebugSphere();
 	//InOrientedBox.Center
 
 	if (sphereMesh)
@@ -215,9 +223,9 @@ bool RSRCollider::DebugDrawSphere(const DirectX::BoundingSphere& InSphere, ID3D1
 	}
 	return false;
 }
-bool RSRush::RSRCollider::DebugDrawBox(const DirectX::BoundingBox& InBox, ID3D12GraphicsCommandList7* InUploadCommandList)
+bool RSRush::RSRCollider::DebugDrawBox(RSRPhysicManager* InPhysicManager, const DirectX::BoundingBox& InBox, ID3D12GraphicsCommandList7* InUploadCommandList)
 {
-	const RSRush::RSRSharedMesh3DPtr& squareMesh = RSRPhysicManager::Get().GetDebugAABB();
+	const RSRush::RSRSharedMesh3DPtr& squareMesh = InPhysicManager->GetDebugAABB();
 
 	if (squareMesh)
 	{

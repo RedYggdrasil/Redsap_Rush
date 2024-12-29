@@ -158,7 +158,7 @@ bool RSRPD1Scene::Load()
 
 	_RF_FALSE(RSRush::RSRBasicShapes::Get(this)->UploadResources(context->GetDevice().Get(), verticesCmdList));
 #if DEBUG_PHYSIC
-	_RF_FALSE(physicManager->UploadResources(DXContext::Get().GetDevice().Get(), verticesCmdList));
+	_RF_FALSE(physicManager->UploadResources(context->GetDevice().Get(), verticesCmdList));
 #endif
 
 	UploadSOResources(context->GetDevice().Get(), verticesCmdList);
@@ -363,13 +363,13 @@ bool RSRush::RSRPD1Scene::Render(const double InGameTime, const double InDeltaTi
 
 #if DEBUG_PHYSIC
 	//----------- DrawDebugPhysic ------------//
-	cmdList->SetPipelineState(m_programInstance->GetPSODebugPhysic().Get());
-	cmdList->SetGraphicsRootSignature(m_programInstance->GetRootSigDebugPhysic().Get());
+	cmdList->SetPipelineState(programInstance->GetPSODebugPhysic().Get());
+	cmdList->SetGraphicsRootSignature(programInstance->GetRootSigDebugPhysic().Get());
 	DirectX::XMStoreFloat4x4(&matrixes.ViewProjMat, CameraViewProjectionMatrix);
 	ModelViewprojectionConstants matrixesDebugPhys = matrixes.ToMVC();
 	cmdList->SetGraphicsRoot32BitConstants(0, MVPC::S32B_STRUCT, &matrixesDebugPhys, 0);
 
-	RSRush::RSRPhysicManager::Get().DrawPhysic(cmdList);
+	RSRush::RSRPhysicManager::Get(this)->DrawPhysic(cmdList);
 #endif
 
 	//(Currently presented frame goes to PresentState)

@@ -44,6 +44,7 @@ namespace RSRush
 		virtual void BeginNewTrench(double InCurrentProgression, std::weak_ptr<RSRush::RSRPlayerPath> InPlayerPath);
 
 		void UpdateTrench(double InDeltaTime, double InCurrentProgression, UINT64 InCurrentUploadFence);
+		bool ClearTrench();
 	public:
 		bool UploadBeingNewResources(ID3D12Device10* InDevice, ID3D12GraphicsCommandList7* InUploadCommandList);
 		bool FreeUploadBuffers();

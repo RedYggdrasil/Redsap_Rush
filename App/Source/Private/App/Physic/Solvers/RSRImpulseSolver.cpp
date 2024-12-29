@@ -51,7 +51,7 @@ void RSRImpulseSolver::Solve(RSRPhysicManager& pm, std::vector<ColbodyIDXsAndCol
 
 		/*[6]*/XMVECTOR1 j = XMVectorScale(XMVectorScale(contactNormalSpeed, -(1.0f + e)), 1.f / (firstInvMass + secondInvMass));
 
-		/*[7]*/XMVECTOR1 impulse = XMVectorMultiply(j, lNormal);
+		/*[7]*/XMVECTOR3 impulse = XMVectorMultiply(j, lNormal);
 
 		if (firstBody.Dynamics.bIsDynamic)
 		{

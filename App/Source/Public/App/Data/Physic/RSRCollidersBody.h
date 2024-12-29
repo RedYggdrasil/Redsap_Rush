@@ -13,6 +13,7 @@
 
 namespace RSRush
 {
+	class RSRPhysicManager;
 	struct alignas(16) RSRCollidersBody
 	{
 	public:
@@ -50,7 +51,7 @@ namespace RSRush
 
 #if DEBUG_PHYSIC
 	public:
-		bool DebugDraw(ID3D12GraphicsCommandList7* InUploadCommandList) const;
+		bool DebugDraw(RSRPhysicManager* InPhysicManager, ID3D12GraphicsCommandList7* InUploadCommandList) const;
 #endif
 	};
 	struct alignas(16) RSRCollidersBodyLWPair

@@ -75,7 +75,7 @@ if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET ${MDS_NAME} PROPERTY CXX_STANDARD 20)
 endif()
 
-target_link_libraries(${MDS_NAME} PUBLIC "d3d12.lib" "dxgi.lib" "dxguid.lib")
+target_link_libraries(${MDS_NAME} PUBLIC "RCB" "d3d12.lib" "dxgi.lib" "dxguid.lib")
 # Normally '${CMAKE_CURRENT_SOURCE_DIR}' is implicit when a relative path is given
 # But this is specifically not the case for the macro 'INSTALL_INTERFACE', making the explicit declaration needed
 # 'INSTALL_INTERFACE' is used when the target is exported using 'install(EXPORT)'

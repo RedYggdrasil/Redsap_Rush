@@ -106,6 +106,7 @@ set(APP_SOURCES_CPP
   ${APP_PUBLIC_SRC}Data/Textures/RSRTexture2D.h				${APP_PRIVTE_SRC}Data/Textures/RSRTexture2D.cpp
   ${APP_PUBLIC_SRC}Data/Textures/RSRTextureLibrary.h		${APP_PRIVTE_SRC}Data/Textures/RSRTextureLibrary.cpp
   
+  ${APP_PUBLIC_SRC}Data/Physic/RSRPhysicBodyID.h			${APP_PRIVTE_SRC}Data/Physic/RSRPhysicBodyID.cpp
   ${APP_PUBLIC_SRC}Data/Physic/RSRCollider.h				${APP_PRIVTE_SRC}Data/Physic/RSRCollider.cpp
   ${APP_PUBLIC_SRC}Data/Physic/RSRCollisionType.h			${APP_PRIVTE_SRC}Data/Physic/RSRCollisionType.cpp
   ${APP_PUBLIC_SRC}Data/Physic/RSRCollisionResult.h			${APP_PRIVTE_SRC}Data/Physic/RSRCollisionResult.cpp
@@ -240,7 +241,7 @@ get_property(ASSIMP_INC_PATH GLOBAL PROPERTY ASSIMP_INC_PATH)
 
 
 
-target_link_libraries(${APP_NAME} PUBLIC "MDS" "zlibstatic" "assimp" "d3d12.lib" "dxgi.lib" "dxguid.lib" ${GAMEINPUT_LIB} Tracy::TracyClient ${ASSIMP_LIBRARIES})
+target_link_libraries(${APP_NAME} PUBLIC "RCB" "MDS" "zlibstatic" "assimp" "d3d12.lib" "dxgi.lib" "dxguid.lib" ${GAMEINPUT_LIB} Tracy::TracyClient ${ASSIMP_LIBRARIES})
 
 
 target_include_directories(${APP_NAME} 

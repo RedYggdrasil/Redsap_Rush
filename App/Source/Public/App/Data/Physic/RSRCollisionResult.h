@@ -14,9 +14,17 @@ namespace RSRush
 	struct alignas(16) RSRCollisionResult
 	{
 	public:
+		//Point on left "1" shape
 		DirectX::XMFLOAT3 P1;
+		//Point on right "2" shape
 		DirectX::XMFLOAT3 P2;
-		DirectX::XMFLOAT3 Normal; // P2 - P1, normalized
+		//----------------------
+		DirectX::XMFLOAT3 Normal; // P2 - P1, normalized 
+		// Form later observation it seem in both oribox and boxbbox I store right to left
+		// so P2 toward P1, witch would then be P1 - P2 and not P2 - P1
+		//                                 (target - origin)
+		// Normal would then point toward the left shape from the right shape
+		//----------------------
 		float Depth; // Length of P2 - P1
 		bool bDidCollide; // Is the result a collision
 	public:

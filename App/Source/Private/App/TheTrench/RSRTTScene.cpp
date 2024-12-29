@@ -194,7 +194,7 @@ bool RSRTTScene::Load()
 
 	_RF_FALSE(basicShapes->UploadResources(context->GetDevice().Get(), verticesCmdList));
 #if DEBUG_PHYSIC
-	_RF_FALSE(physicManager->UploadResources(DXContext::Get().GetDevice().Get(), verticesCmdList));
+	_RF_FALSE(physicManager->UploadResources(context->GetDevice().Get(), verticesCmdList));
 #endif
     //Now SOResource
 	//if (!playerPawn->UploadResources(context->GetDevice().Get(), verticesCmdList))
@@ -263,7 +263,7 @@ bool RSRTTScene::UnLoad()
 	//bool correctlyFreed = m_playerPawn->FreeResourceBuffers();
     bool correctlyFreed = m_topLeftSquare2D.get()->FreeResourcesBuffer();
 	correctlyFreed = m_trenchManager->FreeResourceBuffers() && correctlyFreed;
-
+    correctlyFreed = m_trenchManager->ClearTrench() && correctlyFreed;
 	m_playerPawn.reset();
 	m_topLeftSquare2D.reset();
     m_drawableLightSource.reset();
@@ -413,14 +413,14 @@ bool RSRTTScene::Render(const double InGameTime, const double InDeltaTime)
     //----------- DrawDebugPhysic ------------//
 
     //Setup
-    cmdList->SetPipelineState(m_programInstance->GetPSODebugPhysic().Get());
-    cmdList->SetGraphicsRootSignature(m_programInstance->GetRootSigDebugPhysic().Get());
+    cmdList->SetPipelineState(programInstance->GetPSODebugPhysic().Get());
+    cmdList->SetGraphicsRootSignature(programInstance->GetRootSigDebugPhysic().Get());
     DirectX::XMStoreFloat4x4(&matrixes.ViewProjMat, CameraViewProjectionMatrix);
     ModelViewprojectionConstants matrixesDebugPhys = matrixes.ToMVC();
     cmdList->SetGraphicsRoot32BitConstants(0, MVPC::S32B_STRUCT, &matrixesDebugPhys, 0);
 
     //Draw
-    RSRPhysicManager::Get().DrawPhysic(cmdList);
+    RSRPhysicManager::Get(this)->DrawPhysic(cmdList);
 #endif
 
     //----------- Draw2D ------------//

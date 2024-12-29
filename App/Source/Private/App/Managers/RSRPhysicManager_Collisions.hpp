@@ -18,13 +18,13 @@ namespace RSRush
 			OutCollisions.clear();
 			OutOverlaps.clear();
 
-			for (size_t i = 0, length = pm.m_physicalBodies.size(); i < length; ++i)
+			for (size_t i = 0, length = pm.m_physicBodies.Values.size(); i < length; ++i)
 			{
-				RSRPhysicBody& pBOne = pm.m_physicalBodies[i];
+				RSRPhysicBody& pBOne = pm.m_physicBodies.Values[i];
 				const RSRCollidersBody& e1CBody = pBOne.Colliders.GetWorld();
 				for (size_t j = i + 1; j < length; ++j)
 				{
-					RSRPhysicBody& pBTwo = pm.m_physicalBodies[j];
+					RSRPhysicBody& pBTwo = pm.m_physicBodies.Values[j];
 					const RSRCollidersBody& e2CBody = pBTwo.Colliders.GetWorld();
 
 					RSRCollisionType colType = e1CBody.FillCollidesOrOverlaps(e2CBody, /*Out*/OutCollisions, true);

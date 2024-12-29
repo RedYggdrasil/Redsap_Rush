@@ -38,6 +38,8 @@ void RSRTTGameManager::InitializeGame(std::weak_ptr<RSRScene> InScene, std::weak
 
 void RSRTTGameManager::ShutdownGame()
 {
+	bool bAllSucessfull = true;
+	bAllSucessfull = m_playerPath->ClearPlayerPath() && bAllSucessfull;
 	m_playerPath.reset();
 	GameManager::ShutdownGame();
 }
