@@ -225,7 +225,10 @@ namespace RSRCols
 			RadSum_THEN_ColNorm = XMVector3Normalize(RcenterLcenterVec);
 		}
 
-
+		//--------------------
+		//Much later comment
+		//Aren't we returning the normal from Shape 2 toward shape 1 there ? is it intended ?
+		//---------------------
 		XMStoreFloat3(&result.Normal, RadSum_THEN_ColNorm);
 		XMStoreFloat3(&result.P1, XMVectorMultiplyAdd(XMVectorNegate(RadSum_THEN_ColNorm), lRadius, lCenter));
 		XMStoreFloat3(&result.P2, XMVectorMultiplyAdd(RadSum_THEN_ColNorm, rRadius, rCenter));

@@ -2,6 +2,7 @@
 
 #define NOMINMAX
 //#include "MDS/Defines/MDS.h"
+#include "App/Data/Physic/RSRPhysicBodyID.h"
 #include "App/Data/Physic/RSRCollidersBody.h"
 #include <memory>
 
@@ -81,7 +82,7 @@ namespace RSRush
 	struct RSRPhysicBodyKey
 	{
 		std::weak_ptr<RSRIPhysicalEntity> SelfEntity;
-		size_t LastKnownIndex;
+		RSRPhysicBodyID physicBodyID;
 		bool bHasBeenRegistered;
 	};
 	struct alignas(16) RSRPhysicBody

@@ -24,10 +24,10 @@ namespace RSRush
 		TransformedObjectData m_transformedPhysicalObjectData;
 
 	public:
-		inline void SetLastKnownIndex(const size_t InNewLastKnownIndex) { m_physicalBodyKey.LastKnownIndex = InNewLastKnownIndex; }
 		inline void SetHasBeenRegistered(const bool InbHasBeenRegistered, const RSRPhysicBody& InInitialRegisteredPhysicBody) 
 		{ m_physicalBodyKey.bHasBeenRegistered = InbHasBeenRegistered; m_lastResolvedPhysicBody = InInitialRegisteredPhysicBody; }
 		inline bool GetHasBeenRegistered() const { return m_physicalBodyKey.bHasBeenRegistered; }
+		inline RSRPhysicBodyID GetPhysicBodyID() const { return m_physicalBodyKey.physicBodyID; }
 
 		const RSRPhysicBodyKey& GetKey() const { return m_physicalBodyKey; }
 		RSRPhysicBodyKey& GetEditKey() { return m_physicalBodyKey; }

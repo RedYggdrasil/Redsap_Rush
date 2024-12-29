@@ -36,7 +36,7 @@ RSRush::RSRIPhysicalEntity::RSRIPhysicalEntity()
 : /*m_physicManager(InPhysicManager),*/ m_lastResolvedPhysicBody(UNSET_PHYSIC_BODY), m_physicalBodyKey
     {
         .SelfEntity = std::weak_ptr<RSRIPhysicalEntity>(),
-        .LastKnownIndex = std::numeric_limits<size_t>::max(),
+        .physicBodyID = RSRPBIDProvider::NewBodyID(),
         .bHasBeenRegistered = false
     }, m_transformedPhysicalObjectData
     {

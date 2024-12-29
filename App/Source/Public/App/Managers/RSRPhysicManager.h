@@ -1,5 +1,7 @@
 #pragma once
 #include "Gen_App/Config/AppConfig.h"
+
+#include "RCB/Tools/RCBVectorMap.h"
 #define NOMINMAX
 #include <vector>
 #include <memory>
@@ -23,12 +25,10 @@ namespace RSRush
 		size_t m_optimisation_count_reindexing = 0;
 
 		RSRPhysicContext m_physicContext;
-		std::vector<RSRPhysicBody> m_physicalBodies;
+		rcb::RCBVectorMap<RSRPhysicBodyID, RSRPhysicBody, true> m_physicBodies;
+		//std::vector<RSRPhysicBody> m_physicalBodies;
 		std::vector<std::shared_ptr<RSRSolver>> m_physicalSolvers;
 		//std::mutex  m_physicalPassLock;
-
-	private:
-		std::vector<RSRPhysicBody>::iterator FindEntity(std::weak_ptr<RSRIPhysicalEntity> InPtr);
 
 	private:
 		void OptimisationReportReindexing();
@@ -73,22 +73,11 @@ namespace RSRush
 	public:
 		inline RSRPhysicBody* GetPhysicBody(const RSRPhysicBodyKey& InKey)
 		{
-			if (PlausibleIndex(InKey)) { return &m_physicalBodies[InKey.LastKnownIndex]; }
+			
+			if (m_physicBodies.contains(InKey.physicBodyID)) { return &m_physicBodies[InKey.physicBodyID]; }
 			return nullptr;
 		}
 	private:
-
-		inline bool PlausibleIndex(const RSRPhysicBodyKey& InKey) const
-		{
-			return (InKey.LastKnownIndex < m_physicalBodies.size() && mds::WPtrEqual(m_physicalBodies[InKey.LastKnownIndex].Entity, InKey.SelfEntity));
-		}
-
-		inline size_t ConfirmEntityIndex(const RSRPhysicBodyKey& InKey) const
-		{
-			if (PlausibleIndex(InKey)) { return InKey.LastKnownIndex; }
-			return MissFindEntityIndex(InKey.SelfEntity);
-		}
-		size_t MissFindEntityIndex(const std::weak_ptr<RSRIPhysicalEntity>& InEntity) const;
 
 		void RemovePhysicSolver(std::vector<std::shared_ptr<RSRSolver>>::iterator InIterSolver);
 	

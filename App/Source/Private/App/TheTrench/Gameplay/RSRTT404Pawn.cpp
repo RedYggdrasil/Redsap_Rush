@@ -30,9 +30,9 @@ float RSRTT404Pawn::BASE_FORWARD_MOVEMENT_SPEED = 0.f;
 float RSRTT404Pawn::BOOST_MOVEMENT_SPEED = 3.f;
 float RSRTT404Pawn::BRAKE_MOVEMENT_SPEED = 3.f; //Debug Freecam directions are signed
 #else
-float RSRTT404Pawn::BASE_FORWARD_MOVEMENT_SPEED = 5.f;
-float RSRTT404Pawn::BOOST_MOVEMENT_SPEED = 3.f;
-float RSRTT404Pawn::BRAKE_MOVEMENT_SPEED = -2.5f;
+float RSRTT404Pawn::BASE_FORWARD_MOVEMENT_SPEED = 25.f;
+float RSRTT404Pawn::BOOST_MOVEMENT_SPEED = 15.f;
+float RSRTT404Pawn::BRAKE_MOVEMENT_SPEED = -10.f;
 #endif
 
 static constexpr float POINTER_SIZE = 0.1f;
@@ -612,10 +612,13 @@ RSRPhysicBody RSRTT404Pawn::GeneratePhysicBody() const
 	XMFLOAT4 QuatIdentity = { 0.f, 0.f, 0.f, 1.f };
 	//XMMatrixTransformation
 	bodyCol->Type = RSRColliderType::RectCollider;
+
+	DirectX::BoundingBox meshBB = m_mainMesh->ComputeBoundingBox();
+	
 	bodyCol->RectData =
 	{
-		/*.Center = */      {(FRONT_FORWARD + BACK_FORWARD) * 0.5f, 0.f, (TOP_HEIGHT + BOTTOM_HEIGHT) * 0.5f},
-		/*.Extents = */     { FORWARD_LENGTH * 0.5f, BASE_HALF_WIDTH, TOTAL_HEIGHT * 0.5f },
+		/*.Center = */      meshBB.Center,//{(FRONT_FORWARD + BACK_FORWARD) * 0.5f, 0.f, (TOP_HEIGHT + BOTTOM_HEIGHT) * 0.5f},
+		/*.Extents = */     meshBB.Extents,//{ FORWARD_LENGTH * 0.5f, BASE_HALF_WIDTH, TOTAL_HEIGHT * 0.5f },
 		/*.Orientation = */ QuatIdentity
 	};
 

@@ -41,7 +41,7 @@ namespace RSRush
 			constexpr bool IsValid() const { return IsValid(*this); }
 			//This assume FromToConnections are always sorted as Valid Pointers First
 			size_t NumConnections() const;
-			inline bool NextAvalableConnectionIndex(size_t& OutNextIndex) const { OutNextIndex = NumConnections() + 1; return (OutNextIndex < MAX_NODE_POINT_PATH_SPLIT); }
+			inline bool NextAvalableConnectionIndex(size_t& OutNextIndex) const { OutNextIndex = NumConnections(); return (OutNextIndex < MAX_NODE_POINT_PATH_SPLIT); }
 		};
 #pragma endregion Defs
 
@@ -87,6 +87,7 @@ namespace RSRush
 		bool ConnectNodePoints(RSRPPNode::RSRPPNodePoint& FromPoint, RSRPPNode& ToNode, const size_t InToNodePointIndex);
 	public:
 		void TrimForProgression(const double InProgression);
+		bool ClearPlayerPath();
 		inline double GetMaxProgression() const { return (m_pathPoints.size() > 0) ? m_pathPoints.back().Progression : -1.; };
 	private:
 		void OnNodeToBeRemoved(RSRPPNode& InToBeRemoved);

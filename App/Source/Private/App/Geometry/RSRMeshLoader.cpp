@@ -103,7 +103,8 @@ std::vector<std::shared_ptr<RSRMesh3D>> RSRush::RSRMeshLoader::LoadMeshes3DFromP
 
 	Assimp::Importer Importer;
 	const char* meshPath = InMeshAssetPath.data();
-	const aiScene* pScene = Importer.ReadFile(meshPath, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices);
+	//Export as Y Forward Z Up in blender
+	const aiScene* pScene = Importer.ReadFile(meshPath, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices /* | aiProcess_MakeLeftHanded*/);
 	if (!pScene)
 	{
 		RSRLog::Log(LOG_ERROR, TEXT("RSRMeshLoader : Failed to read 3D mesh at '{}'."), InMeshAssetPath);
@@ -225,7 +226,7 @@ bool LoadAIMesh(std::vector<VertexPositionUVColor>& InOutVertexes, std::vector<u
 		const aiFace& face = InAiMesh->mFaces[i];
 		for (size_t j = 0; j < face.mNumIndices; ++j)
 		{
-			InOutIndexes.push_back((uint16_t)vertexStartIndex + face.mIndices[j]);
+			InOutIndexes.push_back((uint16_t)vertexStartIndex + (uint16_t)face.mIndices[j]);
 		}
 
 	}

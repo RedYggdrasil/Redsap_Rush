@@ -4,6 +4,7 @@
 #include "MDS/Tools/RCoordinate.h"
 #include <filesystem>
 #include <vector>
+#include <DirectXCollision.h>
 
 namespace RSRush
 {
@@ -22,7 +23,7 @@ namespace RSRush
 		virtual const void* GetVertexAdress() const override { return &m_vertexes[0]; }
 		std::vector<VertexPositionUVColor>& GetVertices() { return m_vertexes; }
 		const std::vector<VertexPositionUVColor>& GetVertices() const { return m_vertexes; }
-
+		DirectX::BoundingBox ComputeBoundingBox() const;
 	public:
 		RSRMesh3D(const std::vector<VertexPositionUVColor>& InVertexes);
 		RSRMesh3D(std::vector<VertexPositionUVColor>&& InVertexes);

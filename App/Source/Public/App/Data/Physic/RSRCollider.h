@@ -7,9 +7,13 @@
 #include "App/Data/Meshes/RSRMesh.h"
 #include "App/Data/Physic/RSRCollisionType.h"
 #include <vector>
-
+namespace mds
+{
+	class IRProgramMemElem;
+}
 namespace RSRush
 {
+	class RSRPhysicManager;
 
 	enum class RSRColliderType : uint8_t
 	{
@@ -46,10 +50,11 @@ namespace RSRush
 
 #if DEBUG_PHYSIC
 	public:
-		bool DebugDraw(ID3D12GraphicsCommandList7* InUploadCommandList) const;
-		static bool DebugDrawOrientedBox(const DirectX::BoundingOrientedBox& InOrientedBox, ID3D12GraphicsCommandList7* InUploadCommandList);
-		static bool DebugDrawSphere(const DirectX::BoundingSphere& InSphere, ID3D12GraphicsCommandList7* InUploadCommandList);
-		static bool DebugDrawBox(const DirectX::BoundingBox& InBox, ID3D12GraphicsCommandList7* InUploadCommandList);
+		bool DebugDraw(mds::IRProgramMemElem* InContext, ID3D12GraphicsCommandList7* InUploadCommandList) const;
+		bool DebugDraw(RSRPhysicManager* InPhysicManager, ID3D12GraphicsCommandList7* InUploadCommandList) const;
+		static bool DebugDrawOrientedBox(RSRPhysicManager* InPhysicManager, const DirectX::BoundingOrientedBox& InOrientedBox, ID3D12GraphicsCommandList7* InUploadCommandList);
+		static bool DebugDrawSphere(RSRPhysicManager* InPhysicManager, const DirectX::BoundingSphere& InSphere, ID3D12GraphicsCommandList7* InUploadCommandList);
+		static bool DebugDrawBox(RSRPhysicManager* InPhysicManager, const DirectX::BoundingBox& InBox, ID3D12GraphicsCommandList7* InUploadCommandList);
 #endif
 	};
 

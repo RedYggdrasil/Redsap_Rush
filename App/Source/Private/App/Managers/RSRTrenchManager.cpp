@@ -22,7 +22,7 @@ static const size_t UPLOAD_SEGMENT_COUNT = 5;
 static const double GENERATE_EVERY_SECONDS = 0.1;
 
 //The distance remaining at witch we start to generate the next segments
-static const double GENERATE_PROGRESSION_DISTANCE = 30.;
+static const double GENERATE_PROGRESSION_DISTANCE = 512.;
 
 const XMFLOAT3 START_LOCATION = XMFLOAT3(0.f, 0.f, 0.f);
 const XMFLOAT3 START_DIRECTION = XMFLOAT3(1.f, 0.f, 0.f);
@@ -96,6 +96,23 @@ void RSRTrenchManager::UpdateTrench(double InDeltaTime, double InCurrentProgress
 		this->OnUploadingTrenchMeshEnded();
 	}
 	return;
+}
+
+bool RSRush::RSRTrenchManager::ClearTrench()
+{
+	RSRPhysicManager* physicManager = RSRPhysicManager::Get(this);
+	if (!physicManager)
+	{
+		return false;
+	}
+	while (m_segments.size() > 0)
+	{
+		std::shared_ptr<RSRTrench>& front = m_segments.front();
+		front->FreeResourceBuffers();
+		physicManager->RemovePhysicalEntity(front->GetEditKey());
+		m_segments.pop_front();
+	}
+	return true;
 }
 
 bool RSRTrenchManager::UploadBeingNewResources(ID3D12Device10* InDevice, ID3D12GraphicsCommandList7* InUploadCommandList)

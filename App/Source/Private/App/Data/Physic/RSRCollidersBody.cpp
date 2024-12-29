@@ -230,17 +230,17 @@ RSRCollidersBody& RSRush::RSRCollidersBody::operator=(const RSRCollidersBody& In
 }
 
 #if DEBUG_PHYSIC
-bool RSRush::RSRCollidersBody::DebugDraw(ID3D12GraphicsCommandList7* InUploadCommandList) const
+bool RSRush::RSRCollidersBody::DebugDraw(RSRPhysicManager* InPhysicManager, ID3D12GraphicsCommandList7* InUploadCommandList) const
 {
 	bool allSucessfull = true;
 	if (((UINT64)this->Behavior.SelfMask & (UINT64)DEBUG_PHYSIC_MASK) != 0)
 	{
 #if DEBUG_PHYSIC_AABB
-		allSucessfull = RSRCollider::DebugDrawBox(AABB, InUploadCommandList) && allSucessfull;
+		allSucessfull = RSRCollider::DebugDrawBox(InPhysicManager, AABB, InUploadCommandList) && allSucessfull;
 #endif
 		for (const RSRCollider& col : Colliders)
 		{
-			allSucessfull = col.DebugDraw(InUploadCommandList) && allSucessfull;
+			allSucessfull = col.DebugDraw(InPhysicManager, InUploadCommandList) && allSucessfull;
 		}
 	}
 	return allSucessfull;

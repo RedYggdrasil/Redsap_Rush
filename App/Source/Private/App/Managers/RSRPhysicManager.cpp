@@ -12,12 +12,6 @@
 using namespace RSRush;
 
 
-std::vector<RSRPhysicBody>::iterator RSRush::RSRPhysicManager::FindEntity(std::weak_ptr<RSRIPhysicalEntity> InPtr)
-{
-	return std::find_if(m_physicalBodies.begin(), m_physicalBodies.end(), [&InPtr](const RSRPhysicBody& ptr1) {
-		return mds::WPtrEqual(InPtr, ptr1.Entity);
-		});
-}
 
 void RSRush::RSRPhysicManager::OptimisationReportReindexing()
 {
@@ -32,32 +26,12 @@ void RSRush::RSRPhysicManager::AddPhysicalEntities(const RSRPhysicBody* InStarti
 {
 	if (InSizes > 0)
 	{
-		size_t newSize = m_physicalBodies.size() + InSizes;
-		m_physicalBodies.reserve(newSize);
+		m_physicBodies.reserve_over_current_size(InSizes);
 		for (size_t i = 0; i < InSizes; ++i)
 		{
 			AddPhysicalEntity(InStartingValues[i]);
 		}
 	}
-}
-
-size_t RSRush::RSRPhysicManager::MissFindEntityIndex(const std::weak_ptr<RSRIPhysicalEntity>& InEntity) const
-{
-	RSRLog::LogError(L_PATH TEXT("A missFind entity has been called in RSRPhysicManager, to investigate"));
-
-	if (InEntity.expired())
-	{
-		RSRLog::LogError(L_PATH TEXT("Empty entity given !"));
-		return std::numeric_limits<size_t>::max();
-	}
-	const auto it = std::find_if(m_physicalBodies.begin(), m_physicalBodies.end(), [&InEntity](const RSRPhysicBody& ptr1) {
-		return mds::WPtrEqual(InEntity, ptr1.Entity);
-		});
-	if (it == m_physicalBodies.end()) {
-		RSRLog::LogError(L_PATH TEXT("Empty is not in array !"));
-		return std::numeric_limits<size_t>::max();
-	}
-	return std::distance(m_physicalBodies.begin(), it);
 }
 
 void RSRush::RSRPhysicManager::RemovePhysicSolver(std::vector<std::shared_ptr<RSRSolver>>::iterator InIterSolver)
@@ -81,53 +55,15 @@ void RSRush::RSRPhysicManager::AddPhysicalEntity(const RSRPhysicBody& InStarting
 		RSRLog::Log(LOG_ERROR, TEXT("RSRIPhysicalEntity Has Already Been Registered !"));
 		return;
 	}
-	entityPtr->SetLastKnownIndex(m_physicalBodies.size());
 	entityPtr->SetHasBeenRegistered(true, InStartingValue);
-	m_physicalBodies.push_back(InStartingValue);
+	
+	m_physicBodies.insert_or_assign(entityPtr->GetPhysicBodyID(), InStartingValue);
 }
 
 void RSRush::RSRPhysicManager::RemovePhysicalEntity(RSRPhysicBodyKey& InOutKey, const bool bInUpdateIndexes)
 {
 	InOutKey.bHasBeenRegistered = false;
-	size_t deletedIndex = std::numeric_limits<size_t>::max();
-	if (PlausibleIndex(InOutKey))
-	{
-		deletedIndex = InOutKey.LastKnownIndex;
-		m_physicalBodies.erase(m_physicalBodies.begin() + InOutKey.LastKnownIndex);
-	}
-	else if (InOutKey.SelfEntity.expired())
-	{
-		ClearDangling();
-	}
-	else
-	{
-		auto it = FindEntity(InOutKey.SelfEntity);
-		if (it != m_physicalBodies.end())
-		{
-			deletedIndex = std::distance(m_physicalBodies.begin(), it);
-			m_physicalBodies.erase(it);
-		}
-		else
-		{
-			RSRLog::Log(LOG_EXCEPTION, TEXT("Cannot find entity to remove in RSRPhysicManager !"));
-		}
-	}
-
-
-	size_t newSize = m_physicalBodies.size();
-	if (bInUpdateIndexes && newSize > 0 &&  deletedIndex < (newSize - 1))
-	{
-		{
-			for (; deletedIndex < newSize; ++deletedIndex)
-			{
-				if (std::shared_ptr<RSRIPhysicalEntity> ptr = m_physicalBodies[deletedIndex].Entity.lock())
-				{
-					ptr->GetEditKey().LastKnownIndex = deletedIndex;
-				}
-			}
-		};
-		OptimisationReportReindexing();
-	}
+	m_physicBodies.remove(InOutKey.physicBodyID);
 }
 
 std::weak_ptr<RSRSolver> RSRush::RSRPhysicManager::AddPhysicSolver(const RSRSolverType InEGenericSolverType)
@@ -172,22 +108,18 @@ void RSRush::RSRPhysicManager::RemovePhysicSolver(std::weak_ptr<RSRSolver> InSol
 
 void RSRPhysicManager::ClearDangling()
 {
-	bool bDidDeleteOne = false;
-	std::erase_if(m_physicalBodies, [&bDidDeleteOne](const RSRPhysicBody& ptr1)
+	size_t count = m_physicBodies.size();
+	std::unordered_set<RSRPhysicBodyID> toDeleteKeys;
+	for (const auto& pair : m_physicBodies)
 	{
-		bool bWillDelete = ptr1.Entity.expired();
-		bDidDeleteOne = bWillDelete || bDidDeleteOne;
-		return bWillDelete;
-	});
-	if (bDidDeleteOne)
-	{
-		for (size_t i = 0; i < m_physicalBodies.size(); ++i)
+		if (pair.second.Entity.expired())
 		{
-			if (std::shared_ptr<RSRIPhysicalEntity>ptr = m_physicalBodies[i].Entity.lock())
-			{
-				ptr->GetEditKey().LastKnownIndex = i;
-			}
+			toDeleteKeys.insert(pair.first);
 		}
+	}
+	if (toDeleteKeys.size() > 0)
+	{
+		m_physicBodies.removeRange(toDeleteKeys.begin(), toDeleteKeys.end());
 		OptimisationReportReindexing();
 	}
 }
@@ -208,7 +140,7 @@ void RSRPhysicManager::UpdatePhysic(const double InGameTime, const double InDelt
 	ClearDangling();
 
 	//Allow physical object to update their positons and states
-	for (RSRPhysicBody& physicalBody : m_physicalBodies)
+	for (RSRPhysicBody& physicalBody : m_physicBodies.Values)
 	{
 		if (std::shared_ptr<RSRIPhysicalEntity> entity = physicalBody.Entity.lock())
 		{
@@ -246,8 +178,8 @@ void RSRPhysicManager::UpdatePhysic(const double InGameTime, const double InDelt
 	//RSRLog::LogWarning(log);
 	for (auto& OverlapPair : overlapingObjects)
 	{
-		std::shared_ptr<RSRIPhysicalEntity> firstEntity = m_physicalBodies[OverlapPair.first].Entity.lock();
-		std::shared_ptr<RSRIPhysicalEntity> secondEntity = m_physicalBodies[OverlapPair.second].Entity.lock();
+		std::shared_ptr<RSRIPhysicalEntity> firstEntity = m_physicBodies.Values[OverlapPair.first].Entity.lock();
+		std::shared_ptr<RSRIPhysicalEntity> secondEntity = m_physicBodies.Values[OverlapPair.second].Entity.lock();
 		if (firstEntity && secondEntity)
 		{
 			firstEntity->OnOverlapWith(secondEntity.get());
@@ -258,7 +190,7 @@ void RSRPhysicManager::UpdatePhysic(const double InGameTime, const double InDelt
 	
 	RSRPhysicManager_Dynamics::ApplyForcesToObjets(*this, InDeltaTime);
 
-	for (RSRPhysicBody& physicalBody : m_physicalBodies)
+	for (RSRPhysicBody& physicalBody : m_physicBodies.Values)
 	{
 		XMMATRIX lTrsMat = XMLoadFloat4x4(&physicalBody.Transform.GetMatrix());
 		physicalBody.Colliders.RecomputeWorld(lTrsMat, true);
@@ -305,8 +237,8 @@ bool RSRPhysicManager::Init(RSRProgramInstance* InProgramInstance, RSRBasicShape
 void RSRPhysicManager::Shutdown()
 {
 #if _DEBUG
-	if (m_physicalBodies.size() > 0)
-		{ RSRLog::Log(LOG_ERROR, TEXT("[PhysicManager] {} PhysicBody remains !"), m_physicalBodies.size()); }
+	if (m_physicBodies.Values.size() > 0)
+		{ RSRLog::Log(LOG_ERROR, TEXT("[PhysicManager] {} PhysicBody remains !"), m_physicBodies.Values.size()); }
 #endif
 	ClearDangling();
 	ClearAllPhysicSolvers();
@@ -335,7 +267,7 @@ std::vector<std::shared_ptr<RSRIPhysicalEntity>> RSRush::RSRPhysicManager::FindO
 	std::vector<std::shared_ptr<RSRIPhysicalEntity>> overlapped;
 
 
-	for (const RSRPhysicBody& physicalBody : m_physicalBodies)
+	for (const RSRPhysicBody& physicalBody : m_physicBodies.Values)
 	{
 		std::shared_ptr<RSRIPhysicalEntity> testedEntity = physicalBody.Entity.lock();
 		if (!testedEntity || (bHasIgnore && testedEntity == entityToIgnore)) { continue; }
@@ -357,13 +289,13 @@ std::vector<std::pair<size_t, size_t>> RSRPhysicManager::ComputeOverlaping()
 {
 	std::vector<std::pair<size_t, size_t>> overlapingObjects = std::vector<std::pair<size_t, size_t>>();
 	
-	for (size_t i = 0, length = m_physicalBodies.size(); i < length; ++i)
+	for (size_t i = 0, length = m_physicBodies.Values.size(); i < length; ++i)
 	{
-		RSRPhysicBody& pBOne = m_physicalBodies[i];
+		RSRPhysicBody& pBOne = m_physicBodies.Values[i];
 		const RSRCollidersBody& e1CBody = pBOne.Colliders.GetWorld();
 		for (size_t j = i + 1; j < length; ++j)
 		{
-			RSRPhysicBody & pBTwo = m_physicalBodies[j];
+			RSRPhysicBody & pBTwo = m_physicBodies.Values[j];
 			const RSRCollidersBody& e2CBody = pBTwo.Colliders.GetWorld();
 
 			if (e1CBody.Intersects(e2CBody))
@@ -377,7 +309,7 @@ std::vector<std::pair<size_t, size_t>> RSRPhysicManager::ComputeOverlaping()
 }
 
 RSRPhysicManager::RSRPhysicManager()
-:mds::IRProgramMemElem(), m_physicContext(PhysicContext::DEFAULT_EARTH)
+:mds::IRProgramMemElem(), m_physicContext(PhysicContext::DEFAULT_EARTH), m_physicBodies()
 {
 }
 
@@ -407,7 +339,7 @@ bool RSRPhysicManager::DrawPhysic(ID3D12GraphicsCommandList7* InUploadCommandLis
 
 	for (const RSRPhysicBody& physicalBody : m_debugLastFramephysicalBodies)
 	{
-		bAllSucessfull = physicalBody.Colliders.GetWorld().DebugDraw(InUploadCommandList) && bAllSucessfull;
+		bAllSucessfull = physicalBody.Colliders.GetWorld().DebugDraw(this, InUploadCommandList) && bAllSucessfull;
 	}
 	return bAllSucessfull;
 }
@@ -415,8 +347,8 @@ void RSRush::RSRPhysicManager::DebugCopyDataForDrawing()
 {
 	ZoneScopedN("[DEBUG] Physic Copy");
 	m_debugLastFramephysicalBodies.clear();
-	m_debugLastFramephysicalBodies.reserve(m_physicalBodies.size());
-	for (const RSRPhysicBody& body : m_physicalBodies)
+	m_debugLastFramephysicalBodies.reserve(m_physicBodies.Values.size());
+	for (const RSRPhysicBody& body : m_physicBodies.Values)
 	{
 		m_debugLastFramephysicalBodies.push_back(body);
 	}
