@@ -4,7 +4,7 @@ It is being developped for **Windows** as a Win32 app in **C++** and **HLSL** us
 
 <div align="center"> 
 
-  [![Link to a youtube video showcasing the project](https://img.youtube.com/vi/maSV1JOmacY/hqdefault.jpg)](https://www.youtube.com/watch?v=maSV1JOmacY)
+  [![Link to a youtube video showcasing the project](https://quentin-noguier.fr/Curriculum_Vitae/images/RedsapRush/Redsap_Rush_Showcase_Github.png)](https://www.youtube.com/watch?v=maSV1JOmacY)
 </div>
 
 
